@@ -1,0 +1,3142 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Laporan Harian Pendamping PKH</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Font Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- jsPDF & AutoTable -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <!-- SheetJS (XLSX) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        kemensos: {
+                            navy: '#003366',
+                            navyDark: '#002244',
+                            gold: '#d4af37',
+                            goldHover: '#b89628',
+                            green: '#16a34a',
+                            greenDark: '#15803d'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f4f6f9; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 antialiased min-h-screen flex flex-col pb-20 md:pb-6">
+
+    <header class="bg-kemensos-navy text-white shadow-lg sticky top-0 z-30 border-b-2 border-kemensos-gold">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="bg-white p-1.5 rounded-lg shadow-sm">
+                    <i class="fa-solid fa-hands-holding-child text-kemensos-navy text-xl md:text-2xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-base md:text-xl font-bold tracking-tight leading-tight flex items-center gap-2">
+                        LAPORAN HARIAN PKH
+                        <span class="bg-kemensos-gold text-kemensos-navy font-extrabold text-[10px] px-2 py-0.5 rounded hidden sm:inline-block">KEMENSOS RI</span>
+                    </h1>
+                    <p class="text-xs text-slate-200 hidden sm:block">Sistem Informasi Kegiatan Pendamping Program Keluarga Harapan</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button onclick="window.navTo('identitas')" class="flex items-center space-x-2 bg-kemensos-navyDark hover:bg-blue-950 text-white text-xs md:text-sm py-1.5 px-3 rounded-lg transition shadow-sm border border-kemensos-gold/40">
+                    <i class="fa-solid fa-id-card text-kemensos-gold"></i>
+                    <span id="header-user-name" class="hidden md:inline font-medium">Pendamping PKH</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <nav class="bg-white border-b border-slate-200 hidden md:block shadow-sm sticky top-[57px] z-20">
+        <div class="max-w-7xl mx-auto px-4 flex space-x-1">
+            <button onclick="window.navTo('dashboard')" id="nav-dashboard" class="nav-btn py-3 px-4 font-semibold text-sm border-b-2 border-kemensos-navy text-kemensos-navy flex items-center gap-2">
+                <i class="fa-solid fa-chart-pie text-kemensos-gold"></i> Dashboard
+            </button>
+            <button onclick="window.navTo('tambah')" id="nav-tambah" class="nav-btn py-3 px-4 font-medium text-sm text-slate-600 hover:text-kemensos-navy border-b-2 border-transparent flex items-center gap-2">
+                <i class="fa-solid fa-circle-plus"></i> Tambah Laporan
+            </button>
+            <button onclick="window.navTo('data')" id="nav-data" class="nav-btn py-3 px-4 font-medium text-sm text-slate-600 hover:text-kemensos-navy border-b-2 border-transparent flex items-center gap-2">
+                <i class="fa-solid fa-list-check"></i> Data Laporan
+            </button>
+            <button onclick="window.navTo('rekap')" id="nav-rekap" class="nav-btn py-3 px-4 font-medium text-sm text-slate-600 hover:text-kemensos-navy border-b-2 border-transparent flex items-center gap-2">
+                <i class="fa-solid fa-calendar-days"></i> Rekap Bulanan
+            </button>
+            <button onclick="window.navTo('identitas')" id="nav-identitas" class="nav-btn py-3 px-4 font-medium text-sm text-slate-600 hover:text-kemensos-navy border-b-2 border-transparent flex items-center gap-2">
+                <i class="fa-solid fa-users-gear"></i> Identitas
+            </button>
+            <button onclick="window.navTo('master')" id="nav-master" class="nav-btn py-3 px-4 font-medium text-sm text-slate-600 hover:text-kemensos-navy border-b-2 border-transparent flex items-center gap-2">
+                <i class="fa-solid fa-sliders"></i> Master & Kop
+            </button>
+            <button onclick="window.navTo('backup')" id="nav-backup" class="nav-btn py-3 px-4 font-medium text-sm text-slate-600 hover:text-kemensos-navy border-b-2 border-transparent flex items-center gap-2">
+                <i class="fa-solid fa-database"></i> Backup & Export
+            </button>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-3 sm:px-6 py-4 md:py-6 flex-1 w-full">
+
+        <section id="view-dashboard" class="view-page space-y-6">
+            <div id="identitas-warning-banner" class="hidden bg-amber-50 border-l-4 border-amber-500 p-4 rounded-lg shadow-sm">
+                <div class="flex items-start">
+                    <i class="fa-solid fa-triangle-exclamation text-amber-600 text-xl mr-3 mt-0.5"></i>
+                    <div>
+                        <h3 class="text-sm font-semibold text-amber-800">Identitas Pendamping Belum Lengkap</h3>
+                        <p class="text-xs text-amber-700 mt-1">Harap melengkapi Nama, NIP, Kelurahan, Kecamatan, dan Wilayah tugas Anda agar laporan PDF tercetak dengan benar.</p>
+                        <button onclick="window.navTo('identitas')" class="mt-2 text-xs bg-kemensos-navy text-white px-3 py-1 rounded font-medium hover:bg-blue-950 shadow-sm">Lengkapi Identitas Sekarang</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-gradient-to-r from-kemensos-navy via-blue-900 to-kemensos-navyDark rounded-2xl p-6 text-white shadow-md relative overflow-hidden border-l-4 border-kemensos-gold">
+                <div class="absolute right-0 top-0 bottom-0 opacity-10 flex items-center pr-10 pointer-events-none">
+                    <i class="fa-solid fa-clipboard-list text-9xl text-kemensos-gold"></i>
+                </div>
+                <div class="relative z-10">
+                    <span class="bg-kemensos-gold text-kemensos-navy text-xs font-extrabold px-3 py-1 rounded-full shadow-sm">KEMENTERIAN SOSIAL RI</span>
+                    <h2 class="text-xl md:text-2xl font-bold mt-2" id="dash-greeting">Selamat Datang, Pendamping PKH</h2>
+                    <p class="text-xs md:text-sm text-slate-200 mt-1" id="dash-subtext">Kelola dan rekapitulasi laporan harian Anda dengan mudah dan terstruktur.</p>
+                    
+                    <div class="mt-5 flex flex-wrap gap-2">
+                        <button onclick="window.navTo('tambah')" class="bg-kemensos-gold hover:bg-kemensos-goldHover text-kemensos-navy font-bold px-4 py-2 rounded-xl text-xs md:text-sm shadow flex items-center gap-2 transition transform active:scale-95">
+                            <i class="fa-solid fa-plus-circle text-kemensos-navy"></i> Buat Laporan Baru
+                        </button>
+                        <button onclick="window.navTo('rekap')" class="bg-white/10 hover:bg-white/20 text-white font-medium px-4 py-2 rounded-xl text-xs md:text-sm border border-slate-300/30 flex items-center gap-2 transition">
+                            <i class="fa-solid fa-file-pdf text-amber-300"></i> Rekap & Cetak PDF
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold uppercase text-slate-500 tracking-wider">Hari Ini</span>
+                        <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                            <i class="fa-solid fa-calendar-day"></i>
+                        </div>
+                    </div>
+                    <div class="text-2xl font-bold text-slate-800 mt-2" id="stat-today">0</div>
+                    <p class="text-[11px] text-slate-500 mt-1">Laporan tersimpan hari ini</p>
+                </div>
+
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold uppercase text-slate-500 tracking-wider">Bulan Ini</span>
+                        <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center">
+                            <i class="fa-solid fa-calendar-week"></i>
+                        </div>
+                    </div>
+                    <div class="text-2xl font-bold text-slate-800 mt-2" id="stat-month">0</div>
+                    <p class="text-[11px] text-slate-500 mt-1">Total kegiatan bulan aktif</p>
+                </div>
+
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold uppercase text-slate-500 tracking-wider">Tahun Ini</span>
+                        <div class="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center">
+                            <i class="fa-solid fa-calendar"></i>
+                        </div>
+                    </div>
+                    <div class="text-2xl font-bold text-slate-800 mt-2" id="stat-year">0</div>
+                    <p class="text-[11px] text-slate-500 mt-1">Total kegiatan akumulasi</p>
+                </div>
+
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold uppercase text-slate-500 tracking-wider">Foto Dok.</span>
+                        <div class="w-8 h-8 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center">
+                            <i class="fa-solid fa-camera"></i>
+                        </div>
+                    </div>
+                    <div class="text-2xl font-bold text-slate-800 mt-2" id="stat-photos">0</div>
+                    <p class="text-[11px] text-slate-500 mt-1">Total file foto terlampir</p>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                        <i class="fa-solid fa-chart-bar text-kemensos-navy"></i> Distribusi Kegiatan RHK (1 - 9)
+                    </h3>
+                    <span class="text-xs text-slate-500">Master RHK 1 - 9</span>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3" id="rhk-stat-grid"></div>
+            </div>
+
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                        <i class="fa-solid fa-clock-rotate-left text-kemensos-navy"></i> Laporan Terbaru
+                    </h3>
+                    <button onclick="window.navTo('data')" class="text-xs text-kemensos-navy font-semibold hover:underline">Lihat Semua <i class="fa-solid fa-arrow-right"></i></button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-xs text-left text-slate-600">
+                        <thead class="bg-slate-50 text-slate-700 uppercase font-semibold text-[11px] border-b border-slate-200">
+                            <tr>
+                                <th class="p-3">Tanggal</th>
+                                <th class="p-3">RHK</th>
+                                <th class="p-3">Pilihan Laporan</th>
+                                <th class="p-3">Lokasi</th>
+                                <th class="p-3 text-center">Foto</th>
+                                <th class="p-3 text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dashboard-recent-table" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section id="view-identitas" class="view-page hidden space-y-6">
+            <!-- Accounts / Profiles Selector Section -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 md:p-6 space-y-4">
+                <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-2 border-b border-slate-200 pb-3">
+                    <div>
+                        <h2 class="text-lg md:text-xl font-bold text-slate-800 flex items-center gap-2">
+                            <i class="fa-solid fa-users text-kemensos-navy"></i> Kelola Profil & Akun Pendamping
+                        </h2>
+                        <p class="text-xs text-slate-500 mt-0.5">Anda dapat menambahkan dan memilih akun Pendamping PKH yang aktif digunakan.</p>
+                    </div>
+                    <button onclick="window.createNewProfileForm()" class="bg-kemensos-navy hover:bg-blue-950 text-white text-xs font-semibold px-3.5 py-2 rounded-xl shadow flex items-center gap-1.5 self-start sm:self-auto">
+                        <i class="fa-solid fa-user-plus text-kemensos-gold"></i> + Tambah Akun Baru
+                    </button>
+                </div>
+
+                <!-- Cards Grid for Saved Profiles -->
+                <div id="profiles-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+            </div>
+
+            <!-- Profile Form Editor -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 md:p-6">
+                <div class="border-b border-slate-200 pb-4 mb-5 flex justify-between items-center">
+                    <div>
+                        <h2 class="text-base md:text-lg font-bold text-slate-800 flex items-center gap-2" id="profile-form-title">
+                            <i class="fa-solid fa-user-pen text-kemensos-navy"></i> Form Identitas Pendamping
+                        </h2>
+                        <p class="text-xs text-slate-500 mt-0.5">Isi data identitas pendamping & tanda tangan digital untuk dicetak di PDF.</p>
+                    </div>
+                    <span class="bg-blue-50 text-kemensos-navy text-xs font-bold px-2.5 py-1 rounded border border-blue-200">Profil Pendamping</span>
+                </div>
+
+                <form id="form-identitas" onsubmit="window.saveIdentitas(event)" class="space-y-6">
+                    <input type="hidden" id="profile-edit-id" value="">
+
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider mb-3 border-b border-slate-100 pb-1 flex items-center gap-2">
+                            <i class="fa-solid fa-user text-kemensos-gold"></i> Data Diri & Wilayah Tugas
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-medium text-slate-700 mb-1">Nama Lengkap Pendamping <span class="text-rose-500">*</span></label>
+                                <input type="text" id="id_nama" required placeholder="Contoh: AHMAD FAUZI, S.Sos." class="w-full text-sm p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-kemensos-navy outline-none">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-medium text-slate-700 mb-1">NIP <span class="text-rose-500">*</span></label>
+                                <input type="text" id="id_nip" required placeholder="Contoh: 199001012022011001" class="w-full text-sm p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-kemensos-navy outline-none">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-medium text-slate-700 mb-1">Kelurahan / Desa Wilayah Tugas <span class="text-rose-500">*</span></label>
+                                <input type="text" id="id_kelurahan" required placeholder="Contoh: Kelurahan Tanjung Baru" class="w-full text-sm p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-kemensos-navy outline-none">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-medium text-slate-700 mb-1">Kecamatan Wilayah Tugas <span class="text-rose-500">*</span></label>
+                                <input type="text" id="id_kecamatan" required placeholder="Contoh: Kedamaian" class="w-full text-sm p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-kemensos-navy outline-none">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-medium text-slate-700 mb-1">Kabupaten / Kota <span class="text-rose-500">*</span></label>
+                                <input type="text" id="id_kabupaten" required placeholder="Contoh: Kota Bandar Lampung" class="w-full text-sm p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-kemensos-navy outline-none">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-medium text-slate-700 mb-1">Provinsi <span class="text-rose-500">*</span></label>
+                                <input type="text" id="id_provinsi" required placeholder="Contoh: Lampung" class="w-full text-sm p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-kemensos-navy outline-none">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-medium text-slate-700 mb-1">Periode Default Laporan</label>
+                                <input type="text" id="id_periode" placeholder="Contoh: Bulanan / Semester 1" class="w-full text-sm p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-kemensos-navy outline-none">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-medium text-slate-700 mb-1">Tahun Laporan</label>
+                                <input type="number" id="id_tahun" value="2026" class="w-full text-sm p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-kemensos-navy outline-none">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Digital Signature Upload Section -->
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+                        <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2 border-b border-slate-200 pb-2">
+                            <i class="fa-solid fa-signature text-kemensos-gold"></i> Unggah Tanda Tangan Digital (TTD)
+                        </h3>
+
+                        <div class="flex flex-col sm:flex-row items-center gap-4">
+                            <div id="ttd-preview-box" class="w-36 h-20 border border-slate-300 rounded-lg flex items-center justify-center bg-white overflow-hidden shrink-0 shadow-sm relative">
+                                <img id="ttd-img" src="" class="w-full h-full object-contain hidden" alt="TTD Digital">
+                                <span id="ttd-placeholder" class="text-[11px] text-slate-400 font-medium text-center px-1">Belum Ada TTD</span>
+                            </div>
+
+                            <div class="space-y-1 text-center sm:text-left flex-1">
+                                <input type="file" id="id_ttd_input" accept="image/png,image/jpeg,image/jpg" class="hidden" onchange="window.handleTTDSelect(event)">
+                                <div class="flex flex-wrap gap-2 justify-center sm:justify-start">
+                                    <button type="button" onclick="document.getElementById('id_ttd_input').click()" class="bg-kemensos-navy hover:bg-blue-950 text-white text-xs px-3.5 py-1.5 rounded-lg font-medium transition flex items-center gap-1.5">
+                                        <i class="fa-solid fa-upload text-kemensos-gold"></i> Unggah TTD (PNG/JPG)
+                                    </button>
+                                    <button type="button" onclick="window.removeTTDImage()" id="btn-remove-ttd" class="bg-rose-100 text-rose-700 text-xs px-3 py-1.5 rounded-lg hover:bg-rose-200 font-medium transition hidden flex items-center gap-1">
+                                        <i class="fa-solid fa-trash"></i> Hapus TTD
+                                    </button>
+                                </div>
+                                <p class="text-[11px] text-slate-500">Format PNG transparansi direkomendasikan. TTD akan tercetak otomatis di atas Nama & NIP pada PDF.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end pt-4 border-t border-slate-100">
+                        <button type="submit" class="bg-kemensos-navy hover:bg-blue-950 text-white font-semibold px-6 py-2.5 rounded-xl text-sm shadow transition flex items-center gap-2">
+                            <i class="fa-solid fa-floppy-disk text-kemensos-gold"></i> Simpan Profil Pendamping
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <section id="view-master" class="view-page hidden space-y-6">
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 md:p-6">
+                <div class="border-b border-slate-200 pb-4 mb-5">
+                    <h2 class="text-lg md:text-xl font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-sliders text-kemensos-navy"></i> Pengaturan Master & Kop Surat PDF
+                    </h2>
+                    <p class="text-xs text-slate-500 mt-0.5">Atur Kop Surat instansi, Logo Instansi, dan kustomisasi teks narasi template laporan per jenis RHK.</p>
+                </div>
+
+                <!-- Kop Surat Form -->
+                <form id="form-kop-master" onsubmit="window.saveKopSettings(event)" class="space-y-4 bg-slate-50 p-4 rounded-xl border border-slate-200 mb-6">
+                    <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2 border-b border-slate-200 pb-2">
+                        <i class="fa-solid fa-heading text-kemensos-gold"></i> Pengaturan Kop Surat Laporan PDF
+                    </h3>
+
+                    <div class="bg-white p-3.5 rounded-xl border border-slate-200">
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Logo Instansi (Tampil di Kop Surat PDF)</label>
+                        <div class="flex flex-col sm:flex-row items-center gap-4 mt-2">
+                            <div id="kop-logo-preview-box" class="w-16 h-16 border border-slate-300 rounded-lg flex items-center justify-center bg-slate-100 overflow-hidden shrink-0">
+                                <img id="kop-logo-img" src="" class="w-full h-full object-contain hidden" alt="Logo Kop">
+                                <i id="kop-logo-placeholder" class="fa-solid fa-building-columns text-slate-400 text-2xl"></i>
+                            </div>
+                            <div class="space-y-1 text-center sm:text-left flex-1">
+                                <input type="file" id="kop_logo_input" accept="image/png,image/jpeg,image/jpg" class="hidden" onchange="window.handleLogoSelect(event)">
+                                <div class="flex flex-wrap gap-2 justify-center sm:justify-start">
+                                    <button type="button" onclick="document.getElementById('kop_logo_input').click()" class="bg-kemensos-navy hover:bg-blue-950 text-white text-xs px-3.5 py-1.5 rounded-lg font-medium transition flex items-center gap-1.5">
+                                        <i class="fa-solid fa-upload text-kemensos-gold"></i> Unggah Logo Instansi
+                                    </button>
+                                    <button type="button" onclick="window.removeKopLogo()" id="btn-remove-logo" class="bg-rose-100 text-rose-700 text-xs px-3 py-1.5 rounded-lg hover:bg-rose-200 font-medium transition hidden flex items-center gap-1">
+                                        <i class="fa-solid fa-trash"></i> Hapus Logo
+                                    </button>
+                                </div>
+                                <p class="text-[11px] text-slate-500">Format JPG / PNG. Logo ini akan dicetak otomatis di bagian kiri Kop Surat PDF.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="md:col-span-2">
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Header Baris 1 (Instansi Utama)</label>
+                            <input type="text" id="kop_line1" placeholder="KEMENTERIAN SOSIAL REPUBLIK INDONESIA" class="w-full text-xs p-2.5 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-kemensos-navy bg-white">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Header Baris 2 (Direktorat Jenderal)</label>
+                            <input type="text" id="kop_line2" placeholder="DIREKTORAT JENDERAL PERLINDUNGAN DAN JAMINAN SOSIAL" class="w-full text-xs p-2.5 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-kemensos-navy bg-white">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Header Baris 3 (Direktorat)</label>
+                            <input type="text" id="kop_line3" placeholder="DIREKTORAT PERLINDUNGAN SOSIAL NON KEBENCANAAN" class="w-full text-xs p-2.5 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-kemensos-navy bg-white">
+                        </div>
+
+                        <div class="md:col-span-2">
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Alamat & Kontak Kop Surat</label>
+                            <input type="text" id="kop_address" placeholder="JL. Salemba Raya No. 28 Jakarta Pusat Tlp (021)22804288 http://kemensos.go.id/" class="w-full text-xs p-2.5 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-kemensos-navy bg-white">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Kota Tempat Tanda Tangan PDF</label>
+                            <input type="text" id="kop_kota_ttd" placeholder="Bandar Lampung" class="w-full text-xs p-2.5 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-kemensos-navy bg-white">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Jabatan Pendamping pada Tanda Tangan</label>
+                            <input type="text" id="kop_jabatan" placeholder="Pengelola Layanan Operasional" class="w-full text-xs p-2.5 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-kemensos-navy bg-white">
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end pt-2">
+                        <button type="submit" class="bg-kemensos-navy hover:bg-blue-950 text-white font-semibold px-5 py-2 rounded-lg text-xs shadow transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-floppy-disk text-kemensos-gold"></i> Simpan Kop Surat
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Custom RHK Template Master Text Form -->
+                <div class="space-y-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 pb-2">
+                        <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                            <i class="fa-solid fa-file-pen text-kemensos-navy"></i> Template Teks Narasi PDF per Jenis RHK & Pilihan Laporan
+                        </h3>
+                        <button type="button" onclick="window.openAIMasterAssistantModal()" id="btn-ai-master-tpl" class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs px-3.5 py-1.5 rounded-lg font-bold shadow-sm transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i> ✨ Generate Narasi via AI
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Pilih Nomor RHK</label>
+                            <select id="master-rhk-select" onchange="window.handleMasterRhkSelect()" class="w-full text-xs p-2.5 border border-slate-300 rounded-lg outline-none bg-white">
+                                <option value="">-- Pilih RHK --</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Pilih Pilihan Laporan Harian</label>
+                            <select id="master-pilihan-select" onchange="window.loadRHKTemplateForSelected()" class="w-full text-xs p-2.5 border border-slate-300 rounded-lg outline-none bg-white">
+                                <option value="">-- Pilih RHK Terlebih Dahulu --</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="master-tpl-editor" class="space-y-4 pt-2 hidden">
+                        <div class="border-b border-slate-200 pb-1">
+                            <h4 class="font-bold text-slate-800 text-xs uppercase text-kemensos-navy flex items-center gap-1.5">
+                                <i class="fa-solid fa-bookmark text-kemensos-gold"></i> A. Pendahuluan
+                            </h4>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">1. Umum</label>
+                                <textarea id="tpl_umum" rows="3" class="w-full text-xs p-2.5 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-kemensos-navy bg-white" placeholder="Narasi latar belakang dan konteks umum..."></textarea>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">2. Maksud dan Tujuan</label>
+                                <textarea id="tpl_maksud_tujuan" rows="3" class="w-full text-xs p-2.5 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-kemensos-navy bg-white" placeholder="Rincian maksud dan tujuan kegiatan..."></textarea>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">3. Ruang Lingkup</label>
+                                <textarea id="tpl_ruang_lingkup" rows="3" class="w-full text-xs p-2.5 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-kemensos-navy bg-white" placeholder="Materi sosialisasi, sasaran, metode, serta output laporan..."></textarea>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">4. Dasar</label>
+                                <textarea id="tpl_dasar" rows="3" class="w-full text-xs p-2.5 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-kemensos-navy bg-white" placeholder="Dasar hukum, undang-undang, SK Dirjen, dan RHK..."></textarea>
+                            </div>
+                        </div>
+
+                        <div class="border-b border-slate-200 pb-1 pt-2">
+                            <h4 class="font-bold text-slate-800 text-xs uppercase text-kemensos-navy flex items-center gap-1.5">
+                                <i class="fa-solid fa-list-check text-kemensos-gold"></i> B. Kegiatan yang Dilaksanakan
+                            </h4>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">1. Waktu Pelaksanaan</label>
+                                <textarea id="tpl_waktu_pelaksanaan" rows="2" class="w-full text-xs p-2.5 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-kemensos-navy bg-white" placeholder="Keterangan waktu, metode home visit/pertemuan, dan sasaran..."></textarea>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">2. Pelaksanaan Kegiatan</label>
+                                <textarea id="tpl_pelaksanaan_kegiatan" rows="2" class="w-full text-xs p-2.5 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-kemensos-navy bg-white" placeholder="Tahapan pelaksanaan, materi yang disampaikan, dan akuntabilitas..."></textarea>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end pt-2">
+                            <button type="button" onclick="window.saveRHKTemplateText()" class="bg-kemensos-green hover:bg-kemensos-greenDark text-white font-semibold px-5 py-2 rounded-lg text-xs shadow transition flex items-center gap-1.5">
+                                <i class="fa-solid fa-floppy-disk"></i> Simpan Template Teks RHK
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="view-tambah" class="view-page hidden space-y-6">
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 md:p-6">
+                <div class="border-b border-slate-200 pb-4 mb-5 flex justify-between items-center">
+                    <div>
+                        <h2 class="text-lg md:text-xl font-bold text-slate-800 flex items-center gap-2" id="form-title">
+                            <i class="fa-solid fa-circle-plus text-kemensos-navy"></i> Tambah Laporan Harian
+                        </h2>
+                        <p class="text-xs text-slate-500 mt-0.5">Isi seluruh informasi kegiatan harian pendampingan PKH dengan lengkap.</p>
+                    </div>
+                    <button onclick="window.resetReportForm()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg border border-slate-300">Reset Form</button>
+                </div>
+
+                <form id="form-laporan" onsubmit="window.handleSaveReport(event)" class="space-y-6">
+                    <input type="hidden" id="report-edit-id" value="">
+
+                    <!-- Section A: Tanggal Kegiatan -->
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Tanggal Laporan (Tanggal Kegiatan) <span class="text-rose-500">*</span></label>
+                            <input type="date" id="form-tanggal-laporan" required class="w-full text-sm p-2.5 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-kemensos-navy outline-none">
+                            <p class="text-[11px] text-amber-700 mt-1"><i class="fa-solid fa-circle-info"></i> Pilih tanggal kegiatan sebenarnya (tanggal ini yang tersimpan & tampil di PDF).</p>
+                        </div>
+                    </div>
+
+                    <!-- Section B: Master RHK Cascade -->
+                    <div class="space-y-4">
+                        <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wider border-b border-slate-100 pb-1 flex items-center gap-2">
+                            <i class="fa-solid fa-list-check text-kemensos-navy"></i> Klasifikasi RHK & Pilihan Laporan
+                        </h3>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Pilih Nomor RHK <span class="text-rose-500">*</span></label>
+                            <select id="form-rhk-select" required onchange="window.handleRHKChange()" class="w-full text-sm p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-kemensos-navy outline-none bg-white">
+                                <option value="">-- Pilih Rencana Hasil Kerja (RHK) --</option>
+                            </select>
+                        </div>
+
+                        <div id="rhk-desc-box" class="hidden bg-blue-50 border border-blue-200 p-3 rounded-lg text-xs text-kemensos-navy">
+                            <span class="font-bold block mb-0.5">Deskripsi Rencana Hasil Kerja:</span>
+                            <p id="rhk-desc-text" class="italic"></p>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Pilihan Laporan Harian (Sesuai RHK Selected) <span class="text-rose-500">*</span></label>
+                            <select id="form-pilihan-laporan" required class="w-full text-sm p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-kemensos-navy outline-none bg-white">
+                                <option value="">-- Pilih RHK Terlebih Dahulu --</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Section C: Uraian & Lokasi -->
+                    <div class="space-y-4">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-1">
+                            <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                                <i class="fa-solid fa-pen-to-square text-kemensos-navy"></i> Detail Uraian, Hasil & Lokasi
+                            </h3>
+                            <button type="button" onclick="window.openAIAssistantModal()" class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs px-3 py-1.5 rounded-lg font-bold shadow transition flex items-center gap-1.5">
+                                <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i> ✨ Bantu Tulis Uraian dengan AI
+                            </button>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">B.2. Uraian / Realisasi Kegiatan <span class="text-rose-500">*</span></label>
+                            <textarea id="form-uraian" rows="4" required placeholder="Jelaskan secara rinci kegiatan yang benar-benar dilaksanakan..." class="w-full text-sm p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-kemensos-navy outline-none"></textarea>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">C. Hasil yang Dicapai <span class="text-rose-500">*</span></label>
+                            <textarea id="form-hasil-dicapai" rows="3" required placeholder="Uraikan capaian hasil dari kegiatan ini (misal: statistik KPM hadir, nominal bantuan, hasil sosialisasi)..." class="w-full text-sm p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-kemensos-navy outline-none"></textarea>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">D. Simpulan dan Saran <span class="text-rose-500">*</span></label>
+                            <textarea id="form-simpulan-saran" rows="3" required placeholder="Tuliskan kesimpulan dan saran tindak lanjut..." class="w-full text-sm p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-kemensos-navy outline-none"></textarea>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Lokasi Kegiatan <span class="text-rose-500">*</span></label>
+                                <input type="text" id="form-lokasi" required placeholder="Contoh: Kelurahan Tanjung Baru, Kec. Kedamaian" class="w-full text-sm p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-kemensos-navy outline-none">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Keterangan Tambahan (Opsional)</label>
+                                <input type="text" id="form-keterangan" placeholder="Catatan tambahan bila ada..." class="w-full text-sm p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-kemensos-navy outline-none">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section D: Upload Multi Photos -->
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center border-b border-slate-100 pb-1">
+                            <div>
+                                <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                                    <i class="fa-solid fa-camera text-kemensos-navy"></i> Dokumentasi Kegiatan (Foto)
+                                </h3>
+                                <p class="text-[11px] text-slate-500">Anda dapat mengunggah 1 atau banyak foto sekaligus.</p>
+                            </div>
+                            <button type="button" onclick="window.triggerPhotoUpload()" class="bg-blue-100 hover:bg-blue-200 text-kemensos-navy text-xs font-semibold px-3.5 py-2 rounded-lg flex items-center gap-1.5 transition border border-blue-300">
+                                <i class="fa-solid fa-plus-circle"></i> + Tambah Foto (Multi File)
+                            </button>
+                        </div>
+
+                        <input type="file" id="file-photo-input" accept="image/jpeg,image/png,image/jpg" multiple class="hidden" onchange="window.handlePhotoSelect(event)">
+
+                        <div id="photos-container" class="space-y-4"></div>
+
+                        <div id="no-photo-notice" class="bg-slate-50 border border-dashed border-slate-300 rounded-xl p-6 text-center text-slate-500">
+                            <i class="fa-regular fa-images text-3xl mb-2 text-slate-400"></i>
+                            <p class="text-xs font-medium">Belum ada foto dokumentasi diunggah.</p>
+                            <p class="text-[11px] text-slate-400 mt-0.5">Tekan tombol di bawah untuk memilih foto dari HP/perangkat Anda.</p>
+                            <button type="button" onclick="window.triggerPhotoUpload()" class="mt-3 inline-flex items-center gap-1.5 bg-kemensos-navy text-white text-xs px-4 py-2 rounded-lg hover:bg-blue-950 font-medium">
+                                <i class="fa-solid fa-upload text-kemensos-gold"></i> Unggah Foto Sekarang
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button Bar -->
+                    <div class="pt-4 border-t border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-3">
+                        <button type="button" onclick="window.navTo('data')" class="w-full sm:w-auto px-5 py-2.5 text-slate-600 hover:bg-slate-100 border border-slate-300 rounded-xl text-sm font-medium">Batal</button>
+                        <button type="submit" class="w-full sm:w-auto bg-kemensos-navy hover:bg-blue-950 text-white font-semibold px-8 py-2.5 rounded-xl text-sm shadow transition flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-floppy-disk text-kemensos-gold"></i> Simpan Laporan Harian
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <section id="view-data" class="view-page hidden space-y-6">
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 md:p-6">
+                <div class="flex flex-col md:flex-row justify-between md:items-center gap-4 border-b border-slate-200 pb-4 mb-5">
+                    <div>
+                        <h2 class="text-lg md:text-xl font-bold text-slate-800 flex items-center gap-2">
+                            <i class="fa-solid fa-list-check text-kemensos-navy"></i> Data Laporan Harian
+                        </h2>
+                        <p class="text-xs text-slate-500 mt-0.5">Daftar pencatatan seluruh laporan kegiatan pendamping PKH.</p>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="window.navTo('tambah')" class="bg-kemensos-navy hover:bg-blue-950 text-white text-xs font-semibold px-3 py-2 rounded-lg flex items-center gap-1.5 shadow">
+                            <i class="fa-solid fa-plus text-kemensos-gold"></i> Tambah Laporan
+                        </button>
+                        <button onclick="window.exportToExcel()" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-800 text-xs font-semibold px-3 py-2 rounded-lg flex items-center gap-1.5">
+                            <i class="fa-solid fa-file-excel text-emerald-700"></i> Export Excel
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Filters Bar -->
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3 mb-5">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div class="md:col-span-1">
+                            <label class="block text-[11px] font-semibold text-slate-600 mb-1">Cari Kata Kunci</label>
+                            <div class="relative">
+                                <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+                                <input type="text" id="filter-search" oninput="window.applyFilters()" placeholder="Cari uraian, lokasi, RHK..." class="w-full text-xs pl-8 pr-3 py-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-kemensos-navy bg-white">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-600 mb-1">Dari Tanggal Laporan</label>
+                            <input type="date" id="filter-date-start" onchange="window.applyFilters()" class="w-full text-xs p-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-kemensos-navy bg-white">
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-600 mb-1">Sampai Tanggal Laporan</label>
+                            <input type="date" id="filter-date-end" onchange="window.applyFilters()" class="w-full text-xs p-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-kemensos-navy bg-white">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-slate-200/60">
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-600 mb-1">Filter RHK</label>
+                            <select id="filter-rhk" onchange="window.applyFilters()" class="w-full text-xs p-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-kemensos-navy bg-white">
+                                <option value="">Semua RHK (1 - 9)</option>
+                            </select>
+                        </div>
+
+                        <div class="flex items-end justify-between gap-2">
+                            <div class="flex-1">
+                                <label class="block text-[11px] font-semibold text-slate-600 mb-1">Bulan Kegiatan</label>
+                                <select id="filter-month" onchange="window.applyFilters()" class="w-full text-xs p-2 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-kemensos-navy bg-white">
+                                    <option value="">Semua Bulan</option>
+                                    <option value="01">Januari</option>
+                                    <option value="02">Februari</option>
+                                    <option value="03">Maret</option>
+                                    <option value="04">April</option>
+                                    <option value="05">Mei</option>
+                                    <option value="06">Juni</option>
+                                    <option value="07">Juli</option>
+                                    <option value="08">Agustus</option>
+                                    <option value="09">September</option>
+                                    <option value="10">Oktober</option>
+                                    <option value="11">November</option>
+                                    <option value="12">Desember</option>
+                                </select>
+                            </div>
+                            <button onclick="window.resetFilters()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs px-3 py-2 rounded-lg font-medium transition">Reset Filter</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Data Table -->
+                <div class="overflow-x-auto rounded-xl border border-slate-200">
+                    <table class="w-full text-xs text-left text-slate-700">
+                        <thead class="bg-slate-100 text-slate-700 font-bold uppercase text-[11px] border-b border-slate-200">
+                            <tr>
+                                <th class="p-3 w-10 text-center">No</th>
+                                <th class="p-3 w-28">Tanggal</th>
+                                <th class="p-3 w-16 text-center">RHK</th>
+                                <th class="p-3">Pilihan Laporan & Uraian</th>
+                                <th class="p-3 w-32">Lokasi</th>
+                                <th class="p-3 w-24 text-center">Dokumentasi</th>
+                                <th class="p-3 w-32 text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reports-table-body" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
+
+                <div class="flex justify-between items-center text-xs text-slate-500 pt-3">
+                    <span id="reports-count-label">Menampilkan 0 laporan</span>
+                </div>
+            </div>
+        </section>
+
+        <section id="view-rekap" class="view-page hidden space-y-6">
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 md:p-6">
+                <div class="border-b border-slate-200 pb-4 mb-5 flex justify-between items-center">
+                    <div>
+                        <h2 class="text-lg md:text-xl font-bold text-slate-800 flex items-center gap-2">
+                            <i class="fa-solid fa-calendar-days text-kemensos-navy"></i> Rekapitulasi Laporan Bulanan
+                        </h2>
+                        <p class="text-xs text-slate-500 mt-0.5">Filter dan cetak rangkuman laporan harian dalam satu periode bulan.</p>
+                    </div>
+                </div>
+
+                <div class="bg-blue-50 border border-blue-200 p-4 rounded-xl grid grid-cols-1 md:grid-cols-3 gap-4 items-end mb-6">
+                    <div>
+                        <label class="block text-xs font-semibold text-kemensos-navy mb-1">Pilih Bulan Kegiatan</label>
+                        <select id="rekap-month-select" onchange="window.generateMonthlyRekapView()" class="w-full text-xs p-2.5 border border-blue-300 rounded-lg outline-none bg-white">
+                            <option value="01">Januari</option>
+                            <option value="02">Februari</option>
+                            <option value="03">Maret</option>
+                            <option value="04">April</option>
+                            <option value="05">Mei</option>
+                            <option value="06">Juni</option>
+                            <option value="07">Juli</option>
+                            <option value="08">Agustus</option>
+                            <option value="09">September</option>
+                            <option value="10">Oktober</option>
+                            <option value="11">November</option>
+                            <option value="12">Desember</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-kemensos-navy mb-1">Pilih Tahun</label>
+                        <input type="number" id="rekap-year-input" value="2026" onchange="window.generateMonthlyRekapView()" class="w-full text-xs p-2.5 border border-blue-300 rounded-lg outline-none bg-white">
+                    </div>
+
+                    <div>
+                        <button onclick="window.downloadRekapPDF()" class="w-full bg-kemensos-navy hover:bg-blue-950 text-white font-semibold text-xs py-2.5 px-4 rounded-lg shadow flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-file-pdf text-kemensos-gold"></i> Generate Rekap Bulanan PDF
+                        </button>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <h3 class="text-sm font-bold text-slate-800 border-b border-slate-100 pb-2">Rincian Kegiatan per RHK Bulan <span id="rekap-title-label">-</span></h3>
+                    <div id="rekap-rhk-list" class="grid grid-cols-1 md:grid-cols-3 gap-3"></div>
+                </div>
+
+                <div class="mt-6 space-y-3">
+                    <h3 class="text-sm font-bold text-slate-800">Daftar Kegiatan Bulan Ini</h3>
+                    <div class="overflow-x-auto rounded-xl border border-slate-200">
+                        <table class="w-full text-xs text-left text-slate-700">
+                            <thead class="bg-slate-100 uppercase text-[11px] font-bold text-slate-700">
+                                <tr>
+                                    <th class="p-3 w-10 text-center">No</th>
+                                    <th class="p-3 w-28">Tanggal</th>
+                                    <th class="p-3 w-16 text-center">RHK</th>
+                                    <th class="p-3">Kegiatan & Uraian</th>
+                                    <th class="p-3">Lokasi</th>
+                                    <th class="p-3 text-center">Foto</th>
+                                </tr>
+                            </thead>
+                            <tbody id="rekap-table-body" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="view-backup" class="view-page hidden space-y-6">
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 md:p-6">
+                <div class="border-b border-slate-200 pb-4 mb-5">
+                    <h2 class="text-lg md:text-xl font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-database text-kemensos-navy"></i> Backup, Restore & Ekspor Data
+                    </h2>
+                    <p class="text-xs text-slate-500 mt-0.5">Amankan data laporan harian Anda atau pindahkan ke perangkat lain.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-slate-50 border border-slate-200 p-5 rounded-xl space-y-3">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center text-xl">
+                                <i class="fa-solid fa-download"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-slate-800 text-sm">Backup File Data (JSON)</h3>
+                                <p class="text-xs text-slate-500">Unduh seluruh laporan beserta foto ke file JSON.</p>
+                            </div>
+                        </div>
+                        <p class="text-xs text-slate-600">File backup ini dapat di-restore di perangkat lain atau sebagai cadangan aman.</p>
+                        <button onclick="window.backupJSON()" class="w-full bg-kemensos-navy hover:bg-blue-950 text-white font-semibold text-xs py-2.5 rounded-lg shadow flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-file-export text-kemensos-gold"></i> Download Backup JSON
+                        </button>
+                    </div>
+
+                    <div class="bg-slate-50 border border-slate-200 p-5 rounded-xl space-y-3">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center text-xl">
+                                <i class="fa-solid fa-upload"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-slate-800 text-sm">Restore Data dari JSON</h3>
+                                <p class="text-xs text-slate-500">Kembalikan data laporan dari file backup sebelumnya.</p>
+                            </div>
+                        </div>
+                        <input type="file" id="restore-file-input" accept=".json" class="hidden" onchange="window.restoreJSON(event)">
+                        <button onclick="document.getElementById('restore-file-input').click()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs py-2.5 rounded-lg shadow flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-file-import"></i> Pilih File Backup & Restore
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <div class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-lg z-30 px-2 py-1 flex justify-around items-center">
+        <button onclick="window.navTo('dashboard')" id="mob-dashboard" class="mob-btn flex flex-col items-center p-2 text-kemensos-navy font-bold">
+            <i class="fa-solid fa-chart-pie text-lg"></i>
+            <span class="text-[10px] font-medium mt-0.5">Home</span>
+        </button>
+        <button onclick="window.navTo('tambah')" id="mob-tambah" class="mob-btn flex flex-col items-center p-2 text-slate-500">
+            <i class="fa-solid fa-circle-plus text-lg"></i>
+            <span class="text-[10px] font-medium mt-0.5">Tambah</span>
+        </button>
+        <button onclick="window.navTo('data')" id="mob-data" class="mob-btn flex flex-col items-center p-2 text-slate-500">
+            <i class="fa-solid fa-list-check text-lg"></i>
+            <span class="text-[10px] font-medium mt-0.5">Laporan</span>
+        </button>
+        <button onclick="window.navTo('rekap')" id="mob-rekap" class="mob-btn flex flex-col items-center p-2 text-slate-500">
+            <i class="fa-solid fa-calendar-days text-lg"></i>
+            <span class="text-[10px] font-medium mt-0.5">Rekap</span>
+        </button>
+        <button onclick="window.navTo('master')" id="mob-master" class="mob-btn flex flex-col items-center p-2 text-slate-500">
+            <i class="fa-solid fa-sliders text-lg"></i>
+            <span class="text-[10px] font-medium mt-0.5">Master</span>
+        </button>
+        <button onclick="window.navTo('identitas')" id="mob-identitas" class="mob-btn flex flex-col items-center p-2 text-slate-500">
+            <i class="fa-solid fa-users-gear text-lg"></i>
+            <span class="text-[10px] font-medium mt-0.5">Profil</span>
+        </button>
+    </div>
+
+    <!-- Modal Detail Laporan -->
+    <div id="modal-detail" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 hidden">
+        <div class="bg-white w-full max-w-3xl max-h-[90vh] rounded-2xl shadow-xl flex flex-col overflow-hidden">
+            <div class="bg-kemensos-navy text-white p-4 flex justify-between items-center border-b-2 border-kemensos-gold">
+                <h3 class="font-bold text-base flex items-center gap-2">
+                    <i class="fa-solid fa-file-lines text-kemensos-gold"></i> Detail Laporan Harian
+                </h3>
+                <button onclick="window.closeModal('modal-detail')" class="text-white hover:text-slate-200 text-lg">&times;</button>
+            </div>
+            
+            <div class="p-5 overflow-y-auto space-y-4 text-xs" id="detail-modal-body"></div>
+
+            <div class="bg-slate-50 p-4 border-t border-slate-200 flex justify-end space-x-2">
+                <button onclick="window.closeModal('modal-detail')" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 font-medium">Tutup</button>
+                <button id="detail-pdf-btn" class="px-4 py-2 bg-kemensos-navy text-white rounded-lg hover:bg-blue-950 font-semibold flex items-center gap-1.5 shadow">
+                    <i class="fa-solid fa-file-pdf text-kemensos-gold"></i> Cetak PDF
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal AI Assistant Narrative Generator -->
+    <div id="modal-ai-assistant" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 hidden">
+        <div class="bg-white w-full max-w-lg rounded-2xl shadow-xl overflow-hidden flex flex-col border border-purple-200">
+            <div class="bg-gradient-to-r from-indigo-900 via-purple-900 to-kemensos-navy text-white p-4 flex justify-between items-center border-b-2 border-amber-400">
+                <h3 class="font-bold text-sm md:text-base flex items-center gap-2">
+                    <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i> Asisten AI Penulis Laporan PKH
+                </h3>
+                <button onclick="window.closeModal('modal-ai-assistant')" class="text-white hover:text-slate-200 text-lg">&times;</button>
+            </div>
+            
+            <div class="p-5 space-y-4 text-xs">
+                <div class="bg-purple-50 border border-purple-200 rounded-xl p-3 text-purple-900">
+                    <p class="font-bold flex items-center gap-1.5"><i class="fa-solid fa-lightbulb text-amber-500"></i> Ketik instruksi / poin singkat kegiatan:</p>
+                    <p class="mt-1 text-[11px] text-purple-800">AI akan otomatis menyusun <strong>Uraian Kegiatan</strong>, <strong>Hasil yang Dicapai</strong>, dan <strong>Simpulan & Saran</strong> secara formal berbasis standar Kemensos.</p>
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Poin Singkat Kegiatan Anda:</label>
+                    <textarea id="ai-user-prompt" rows="3" placeholder="Contoh: Sosialisasi pencairan bansos KPM di balai desa, hadir 30 orang KPM lansia, berjalan tertib, nominal bansos tersalurkan lancar..." class="w-full text-xs p-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-purple-600 bg-white"></textarea>
+                </div>
+
+                <div id="ai-loading-indicator" class="hidden bg-indigo-50 border border-indigo-200 rounded-xl p-3 text-center space-y-2">
+                    <i class="fa-solid fa-spinner fa-spin text-purple-600 text-2xl"></i>
+                    <p class="font-semibold text-indigo-900 text-xs">Asisten AI sedang menyusun uraian, hasil, serta simpulan & saran...</p>
+                </div>
+            </div>
+
+            <div class="bg-slate-50 p-4 border-t border-slate-200 flex justify-end space-x-2">
+                <button onclick="window.closeModal('modal-ai-assistant')" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 font-medium text-xs">Batal</button>
+                <button onclick="window.runAIGenerateNarrative()" id="btn-run-ai" class="px-5 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-lg font-bold text-xs shadow flex items-center gap-1.5">
+                    <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i> Buat Laporan dengan AI
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal AI Master Template Assistant -->
+    <div id="modal-ai-master-assistant" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 hidden">
+        <div class="bg-white w-full max-w-lg rounded-2xl shadow-xl overflow-hidden flex flex-col border border-purple-200">
+            <div class="bg-gradient-to-r from-indigo-900 via-purple-900 to-kemensos-navy text-white p-4 flex justify-between items-center border-b-2 border-amber-400">
+                <h3 class="font-bold text-sm md:text-base flex items-center gap-2">
+                    <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i> Asisten AI Template Master RHK
+                </h3>
+                <button onclick="window.closeModal('modal-ai-master-assistant')" class="text-white hover:text-slate-200 text-lg">&times;</button>
+            </div>
+            
+            <div class="p-5 space-y-4 text-xs">
+                <div class="bg-purple-50 border border-purple-200 rounded-xl p-3 text-purple-900">
+                    <p class="font-bold flex items-center gap-1.5"><i class="fa-solid fa-lightbulb text-amber-500"></i> Ketik instruksi / poin singkat template kegiatan:</p>
+                    <p class="mt-1 text-[11px] text-purple-800">AI akan menyusun <strong>Pendahuluan (Umum, Maksud & Tujuan, Ruang Lingkup, Dasar Hukum)</strong> dan <strong>Kegiatan (Waktu & Pelaksanaan)</strong> secara formal berbasis standar Kemensos RI agar narasi yang dihasilkan searah dengan maksud Anda.</p>
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Poin Singkat / Petunjuk Khusus Anda:</label>
+                    <textarea id="ai-master-user-prompt" rows="3" placeholder="Contoh: Fokus sosialisasi KKS & ATM Himbara di kantor desa/kelurahan, bantuan tunai & non-tunai, target KPM PKH lansia dan komponen kesehatan/pendidikan..." class="w-full text-xs p-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-purple-600 bg-white"></textarea>
+                </div>
+
+                <div id="ai-master-loading-indicator" class="hidden bg-indigo-50 border border-indigo-200 rounded-xl p-3 text-center space-y-2">
+                    <i class="fa-solid fa-spinner fa-spin text-purple-600 text-2xl"></i>
+                    <p class="font-semibold text-indigo-900 text-xs">Asisten AI sedang menyusun template narasi master Kemensos...</p>
+                </div>
+            </div>
+
+            <div class="bg-slate-50 p-4 border-t border-slate-200 flex justify-end space-x-2">
+                <button onclick="window.closeModal('modal-ai-master-assistant')" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 font-medium text-xs">Batal</button>
+                <button onclick="window.runAIGenerateMasterNarrative()" id="btn-run-master-ai" class="px-5 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-lg font-bold text-xs shadow flex items-center gap-1.5">
+                    <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i> Generate Template AI
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast-notification" class="fixed bottom-20 md:bottom-6 right-4 z-50 bg-slate-800 text-white px-4 py-3 rounded-xl shadow-lg border border-slate-700 text-xs flex items-center space-x-3 transition transform translate-y-20 opacity-0">
+        <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400 text-base"></i>
+        <span id="toast-message" class="font-medium">Pesan pemberitahuan</span>
+    </div>
+
+    <!-- Modal Delete Confirmation -->
+    <div id="modal-delete" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 hidden">
+        <div class="bg-white w-full max-w-sm rounded-2xl shadow-xl p-5 text-center space-y-4">
+            <div class="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto text-xl">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <div>
+                <h3 class="font-bold text-slate-800 text-base" id="delete-modal-title">Hapus Laporan Harian?</h3>
+                <p class="text-xs text-slate-500 mt-1" id="delete-modal-desc">Tindakan ini tidak dapat dibatalkan.</p>
+            </div>
+            <div class="flex justify-center space-x-3 pt-2">
+                <button onclick="window.closeModal('modal-delete')" class="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl text-xs font-semibold hover:bg-slate-200">Batal</button>
+                <button id="confirm-delete-btn" class="px-4 py-2 bg-rose-600 text-white rounded-xl text-xs font-semibold hover:bg-rose-700 shadow">Ya, Hapus</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // AI Gemini Integration Helper with Exponential Backoff
+        async function callGeminiAPI(userQuery, systemPrompt) {
+            const apiKey = "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+            const payload = {
+                contents: [{ parts: [{ text: userQuery }] }],
+                systemInstruction: {
+                    parts: [{ text: systemPrompt }]
+                },
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "OBJECT",
+                        properties: {
+                            "uraian": { "type": "STRING" },
+                            "hasil_dicapai": { "type": "STRING" },
+                            "simpulan_saran": { "type": "STRING" },
+                            "umum": { "type": "STRING" },
+                            "maksud_tujuan": { "type": "STRING" },
+                            "ruang_lingkup": { "type": "STRING" },
+                            "dasar": { "type": "STRING" },
+                            "waktu_pelaksanaan": { "type": "STRING" },
+                            "pelaksanaan_kegiatan": { "type": "STRING" }
+                        },
+                        required: ["uraian", "hasil_dicapai", "simpulan_saran"]
+                    }
+                }
+            };
+
+            let retries = 3;
+            let delay = 1000;
+
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) throw new Error(`HTTP Error ${response.status}`);
+
+                    const result = await response.json();
+                    const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+                    if (text) {
+                        return JSON.parse(text);
+                    }
+                } catch (err) {
+                    if (i === retries - 1) throw err;
+                    await new Promise(res => setTimeout(res, delay));
+                    delay *= 2;
+                }
+            }
+            throw new Error("Gagal menghubungkan ke layanan AI Gemini");
+        }
+
+        function openAIAssistantModal() {
+            document.getElementById('modal-ai-assistant').classList.remove('hidden');
+        }
+        window.openAIAssistantModal = openAIAssistantModal;
+
+        function openAIMasterAssistantModal() {
+            const rhkId = document.getElementById('master-rhk-select').value;
+            const optVal = document.getElementById('master-pilihan-select').value;
+
+            if (!rhkId || !optVal) {
+                showToast('Pilih RHK dan Pilihan Laporan terlebih dahulu!', 'error');
+                return;
+            }
+            document.getElementById('modal-ai-master-assistant').classList.remove('hidden');
+        }
+        window.openAIMasterAssistantModal = openAIMasterAssistantModal;
+
+        async function runAIGenerateNarrative() {
+            const userNotes = document.getElementById('ai-user-prompt').value.trim();
+            const rhkId = document.getElementById('form-rhk-select').value;
+            const pilihanLaporan = document.getElementById('form-pilihan-laporan').value;
+            const rhkMaster = MASTER_RHK.find(r => r.id === parseInt(rhkId, 10));
+
+            if (!userNotes) {
+                showToast('Harap isi instruksi atau poin singkat kegiatan!', 'error');
+                return;
+            }
+
+            const loadingEl = document.getElementById('ai-loading-indicator');
+            const runBtn = document.getElementById('btn-run-ai');
+            loadingEl.classList.remove('hidden');
+            runBtn.disabled = true;
+
+            const systemPrompt = "Anda adalah Asisten AI Profesional Pendamping Program Keluarga Harapan (PKH) Kementerian Sosial Republik Indonesia. Tugas Anda menyusun teks uraian realisasi kegiatan, hasil yang dicapai, serta simpulan dan saran resmi laporan harian PKH yang baku, akurat, dan formal.";
+            const userQuery = `Buatkan teks laporan harian PKH Kemensos RI untuk:
+- RHK ${rhkId}: ${rhkMaster ? rhkMaster.desc : ''}
+- Pilihan Laporan: ${pilihanLaporan}
+- Poin Singkat Lapangan Pendamping: "${userNotes}"
+
+Susun output JSON dengan field berikut:
+1. "uraian": Uraian/realisasi kegiatan yang lengkap, formal, dan mencerminkan pelaksanaan di lapangan.
+2. "hasil_dicapai": Uraian capaian hasil yang konkret dan jelas.
+3. "simpulan_saran": Kesimpulan kegiatan dan saran tindak lanjut rekomendasi perbaikan.`;
+
+            try {
+                const aiResult = await callGeminiAPI(userQuery, systemPrompt);
+                if (aiResult) {
+                    if (aiResult.uraian) document.getElementById('form-uraian').value = aiResult.uraian;
+                    if (aiResult.hasil_dicapai) document.getElementById('form-hasil-dicapai').value = aiResult.hasil_dicapai;
+                    if (aiResult.simpulan_saran) document.getElementById('form-simpulan-saran').value = aiResult.simpulan_saran;
+
+                    closeModal('modal-ai-assistant');
+                    showToast('Uraian, Hasil, serta Simpulan & Saran berhasil disusun oleh AI!');
+                }
+            } catch (err) {
+                console.error("AI Generation error:", err);
+                showToast('Terjadi kesalahan saat memproses AI. Silakan coba lagi.', 'error');
+            } finally {
+                loadingEl.classList.add('hidden');
+                runBtn.disabled = false;
+            }
+        }
+        window.runAIGenerateNarrative = runAIGenerateNarrative;
+
+        async function runAIGenerateMasterNarrative() {
+            const rhkId = document.getElementById('master-rhk-select').value;
+            const optVal = document.getElementById('master-pilihan-select').value;
+            const userNotes = document.getElementById('ai-master-user-prompt').value.trim();
+
+            if (!rhkId || !optVal) {
+                showToast('Pilih RHK dan Pilihan Laporan terlebih dahulu!', 'error');
+                return;
+            }
+
+            const loadingEl = document.getElementById('ai-master-loading-indicator');
+            const runBtn = document.getElementById('btn-run-master-ai');
+            loadingEl.classList.remove('hidden');
+            runBtn.disabled = true;
+
+            const rhkMaster = MASTER_RHK.find(r => r.id === parseInt(rhkId, 10));
+            const systemPrompt = "Anda adalah Penyusun Dokumen Resmi Kementerian Sosial RI untuk Program Keluarga Harapan (PKH). Susun teks template narasi formal standar laporan PDF Kemensos RI.";
+            const userQuery = `Buatkan template narasi formal standar laporan PDF Kemensos RI untuk:
+- RHK ${rhkId}: ${rhkMaster ? rhkMaster.desc : ''}
+- Pilihan Laporan: ${optVal}
+${userNotes ? `- Poin Singkat / Petunjuk Khusus Penulis: "${userNotes}"` : ''}
+
+Susun output JSON persis sesuai struktur master laporan Kemensos:
+1. "umum": Narasi Latar Belakang & Umum.
+2. "maksud_tujuan": Narasi Maksud dan Tujuan.
+3. "ruang_lingkup": Narasi Ruang Lingkup (Materi, Sasaran & Metode, Output Laporan).
+4. "dasar": Narasi Dasar Hukum (UU No 11/2009, UU No 13/2011, SK Dirjen, Data PKH).
+5. "waktu_pelaksanaan": Narasi Waktu Pelaksanaan & Metode.
+6. "pelaksanaan_kegiatan": Narasi Pelaksanaan Kegiatan.`;
+
+            try {
+                const aiResult = await callGeminiAPI(userQuery, systemPrompt);
+                if (aiResult) {
+                    document.getElementById('master-tpl-editor').classList.remove('hidden');
+                    document.getElementById('tpl_umum').value = aiResult.umum || '';
+                    document.getElementById('tpl_maksud_tujuan').value = aiResult.maksud_tujuan || '';
+                    document.getElementById('tpl_ruang_lingkup').value = aiResult.ruang_lingkup || '';
+                    document.getElementById('tpl_dasar').value = aiResult.dasar || '';
+                    document.getElementById('tpl_waktu_pelaksanaan').value = aiResult.waktu_pelaksanaan || '';
+                    document.getElementById('tpl_pelaksanaan_kegiatan').value = aiResult.pelaksanaan_kegiatan || '';
+
+                    closeModal('modal-ai-master-assistant');
+                    showToast('Template narasi master berhasil dibuat oleh AI!');
+                }
+            } catch (err) {
+                console.error("Master Template AI Error:", err);
+                showToast('Gagal memproses AI Master Template.', 'error');
+            } finally {
+                loadingEl.classList.add('hidden');
+                runBtn.disabled = false;
+            }
+        }
+        window.runAIGenerateMasterNarrative = runAIGenerateMasterNarrative;
+
+        // MASTER RHK DATA DICTIONARY
+        const MASTER_RHK = [
+            {
+                id: 1,
+                desc: "Terlaksananya penyaluran bansos kepada Keluarga Penerima Manfaat (KPM) PKH tepat sasaran dan tepat jumlah.",
+                options: [
+                    "Melakukan edukasi dan sosialisasi pencairan secara tunai dan non tunai.",
+                    "Melaksanakan Supervisi Permasalahan Bantuan Sosial.",
+                    "Melaksanakan Monitoring/Pemantauan Penyaluran Bantuan Sosial.",
+                    "Melaksanakan Penelitian penyaluran bantuan Sosial."
+                ]
+            },
+            {
+                id: 2,
+                desc: "Terlaksananya pertemuan P2K2 sesuai dengan ketentuan.",
+                options: [
+                    "Melaksanakan Pertemuan Peningkatan Kemampuan Keluarga (P2K2)."
+                ]
+            },
+            {
+                id: 3,
+                desc: "Terlaksananya Verifikasi Komitmen Pendidikan, Kesehatan dan Kesejahteraan Sosial secara akurat sesuai dengan ketentuan.",
+                options: [
+                    "Melaksanakan Verifikasi Komitmen Pendidikan, Kesehatan dan Kesejahteraan Sosial.",
+                    "Melakukan pendampingan, mediasi, dan fasilitasi kepada KPM PKH dalam proses perubahan perilaku, pola pikir yang mandiri dan produktif."
+                ]
+            },
+            {
+                id: 4,
+                desc: "Tersedianya Data KPM graduasi yang disusun sesuai dengan instrumen dan ketentuan.",
+                options: [
+                    "Melakukan usulan KPM Graduasi mandiri dan Pemberdayaan PPSE."
+                ]
+            },
+            {
+                id: 5,
+                desc: "Terlaksananya Verifikasi, Validasi dan Permutakhiran Data KPM secara akurat sesuai dengan ketentuan.",
+                options: [
+                    "Melaksanakan Pemutakhiran Data.",
+                    "Melaksanakan proses bisnis PKH yang meliputi verifikasi validasi calon penerima bantuan sosial."
+                ]
+            },
+            {
+                id: 6,
+                desc: "Terlaksananya kegiatan kasus adaptif (Respon kasus/pengaduan/kebencanaan/kerentanan) disusun secara lengkap dan akurat.",
+                options: [
+                    "Melaksanakan Respon Kasus/Pengaduan/Kebencanaan/Kerentanan."
+                ]
+            },
+            {
+                id: 7,
+                desc: "Tersedianya Data Analisis Laporan Bulanan yang disusun sesuai dengan Ketentuan.",
+                options: [
+                    "Membuat laporan bulanan pelaksanaan PKH dan laporan lainnya."
+                ]
+            },
+            {
+                id: 8,
+                desc: "Terlaksananya direktif pimpinan sesuai dengan penugasan; program Kementerian Sosial.",
+                options: [
+                    "Melaksanakan Tindak Lanjut Hasil Pemeriksaan (TLHP).",
+                    "Melakukan sosialisasi kebijakan dan bisnis proses PKH kepada aparat pemerintah tingkat kecamatan, desa/kelurahan, KPM PKH, dan masyarakat umum secara berkala melalui pertemuan atau media sosial dll.",
+                    "Mengikuti Rapat Koordinasi, Sosialisasi Kebijakan Proses Bisnis PKH dan Penguatan Kapasitas SDM.",
+                    "Tugas Lainnya (Penugasan lainnya program Kementerian Sosial)."
+                ]
+            },
+            {
+                id: 9,
+                desc: "Terlaksananya Penyebaran Berita Baik Kementerian Sosial.",
+                options: [
+                    "Berperan aktif dalam memanfaatkan, menggunakan, melibatkan dan menyebarkan Media Sosial untuk menyampaikan semua program di Kementerian Sosial."
+                ]
+            }
+        ];
+
+        const db = {
+            dbInstance: null,
+            init() {
+                return new Promise((resolve, reject) => {
+                    const request = indexedDB.open('PkhReportDB', 2);
+                    request.onupgradeneeded = (e) => {
+                        const dbInst = e.target.result;
+                        if (!dbInst.objectStoreNames.contains('identitas')) {
+                            dbInst.createObjectStore('identitas');
+                        }
+                        if (!dbInst.objectStoreNames.contains('profiles')) {
+                            dbInst.createObjectStore('profiles', { keyPath: 'id' });
+                        }
+                        if (!dbInst.objectStoreNames.contains('reports')) {
+                            const repStore = dbInst.createObjectStore('reports', { keyPath: 'id' });
+                            repStore.createIndex('tanggal_laporan', 'tanggal_laporan', { unique: false });
+                            repStore.createIndex('rhk_id', 'rhk_id', { unique: false });
+                        }
+                        if (!dbInst.objectStoreNames.contains('settings')) {
+                            dbInst.createObjectStore('settings', { keyPath: 'key' });
+                        }
+                    };
+                    request.onsuccess = (e) => {
+                        this.dbInstance = e.target.result;
+                        resolve(this.dbInstance);
+                    };
+                    request.onerror = (e) => reject(e);
+                });
+            },
+            async getAllProfiles() {
+                if (!this.dbInstance) await this.init();
+                return new Promise((resolve) => {
+                    const tx = this.dbInstance.transaction('profiles', 'readonly');
+                    const req = tx.objectStore('profiles').getAll();
+                    req.onsuccess = () => resolve(req.result || []);
+                    req.onerror = () => resolve([]);
+                });
+            },
+            async getProfileById(id) {
+                if (!this.dbInstance) await this.init();
+                return new Promise((resolve) => {
+                    const tx = this.dbInstance.transaction('profiles', 'readonly');
+                    const req = tx.objectStore('profiles').get(id);
+                    req.onsuccess = () => resolve(req.result || null);
+                    req.onerror = () => resolve(null);
+                });
+            },
+            async saveProfile(profile) {
+                if (!this.dbInstance) await this.init();
+                return new Promise((resolve) => {
+                    const tx = this.dbInstance.transaction('profiles', 'readwrite');
+                    tx.objectStore('profiles').put(profile);
+                    tx.oncomplete = () => resolve(true);
+                });
+            },
+            async deleteProfile(id) {
+                if (!this.dbInstance) await this.init();
+                return new Promise((resolve) => {
+                    const tx = this.dbInstance.transaction('profiles', 'readwrite');
+                    tx.objectStore('profiles').delete(id);
+                    tx.oncomplete = () => resolve(true);
+                });
+            },
+            async getActiveProfile() {
+                if (!this.dbInstance) await this.init();
+                const activeId = await this.getSetting('active_profile_id');
+                if (activeId) {
+                    const prof = await this.getProfileById(activeId);
+                    if (prof) return prof;
+                }
+                const all = await this.getAllProfiles();
+                if (all.length > 0) return all[0];
+                return null;
+            },
+            async setActiveProfileId(id) {
+                await this.saveSetting('active_profile_id', id);
+            },
+            async getAllReports() {
+                if (!this.dbInstance) await this.init();
+                return new Promise((resolve) => {
+                    const tx = this.dbInstance.transaction('reports', 'readonly');
+                    const req = tx.objectStore('reports').getAll();
+                    req.onsuccess = () => resolve(req.result || []);
+                    req.onerror = () => resolve([]);
+                });
+            },
+            async getReportById(id) {
+                if (!this.dbInstance) await this.init();
+                return new Promise((resolve) => {
+                    const tx = this.dbInstance.transaction('reports', 'readonly');
+                    const req = tx.objectStore('reports').get(id);
+                    req.onsuccess = () => resolve(req.result || null);
+                    req.onerror = () => resolve(null);
+                });
+            },
+            async saveReport(report) {
+                if (!this.dbInstance) await this.init();
+                return new Promise((resolve) => {
+                    const tx = this.dbInstance.transaction('reports', 'readwrite');
+                    tx.objectStore('reports').put(report);
+                    tx.oncomplete = () => resolve(true);
+                });
+            },
+            async deleteReport(id) {
+                if (!this.dbInstance) await this.init();
+                return new Promise((resolve) => {
+                    const tx = this.dbInstance.transaction('reports', 'readwrite');
+                    tx.objectStore('reports').delete(id);
+                    tx.oncomplete = () => resolve(true);
+                });
+            },
+            async saveSetting(key, val) {
+                if (!this.dbInstance) await this.init();
+                return new Promise((resolve) => {
+                    const tx = this.dbInstance.transaction('settings', 'readwrite');
+                    tx.objectStore('settings').put({ key, value: val });
+                    tx.oncomplete = () => resolve(true);
+                });
+            },
+            async getSetting(key) {
+                if (!this.dbInstance) await this.init();
+                return new Promise((resolve) => {
+                    const tx = this.dbInstance.transaction('settings', 'readonly');
+                    const req = tx.objectStore('settings').get(key);
+                    req.onsuccess = () => resolve(req.result ? req.result.value : null);
+                    req.onerror = () => resolve(null);
+                });
+            },
+            async bulkSaveReports(reportsList) {
+                if (!this.dbInstance) await this.init();
+                return new Promise((resolve) => {
+                    const tx = this.dbInstance.transaction('reports', 'readwrite');
+                    const store = tx.objectStore('reports');
+                    reportsList.forEach(r => store.put(r));
+                    tx.oncomplete = () => resolve(true);
+                });
+            }
+        };
+
+        // Navigation Controller
+        function navTo(pageId) {
+            document.querySelectorAll('.view-page').forEach(el => el.classList.add('hidden'));
+            const targetPage = document.getElementById('view-' + pageId);
+            if (targetPage) targetPage.classList.remove('hidden');
+
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('border-kemensos-navy', 'text-kemensos-navy');
+                btn.classList.add('border-transparent', 'text-slate-600');
+            });
+            const activeNav = document.getElementById('nav-' + pageId);
+            if (activeNav) {
+                activeNav.classList.remove('border-transparent', 'text-slate-600');
+                activeNav.classList.add('border-kemensos-navy', 'text-kemensos-navy');
+            }
+
+            document.querySelectorAll('.mob-btn').forEach(btn => {
+                btn.classList.remove('text-kemensos-navy', 'font-bold');
+                btn.classList.add('text-slate-500');
+            });
+            const activeMob = document.getElementById('mob-' + pageId);
+            if (activeMob) {
+                activeMob.classList.remove('text-slate-500');
+                activeMob.classList.add('text-kemensos-navy', 'font-bold');
+            }
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            if (pageId === 'dashboard') refreshDashboard();
+            if (pageId === 'data') loadReportsTable();
+            if (pageId === 'rekap') generateMonthlyRekapView();
+            if (pageId === 'master') { loadKopSettings(); populateMasterRhkSelects(); }
+            if (pageId === 'identitas') loadProfilesManager();
+        }
+        window.navTo = navTo;
+
+        let currentUploadedPhotos = [];
+        let currentKopLogoUrl = '';
+        let currentTTDUrl = '';
+        let pendingDeleteId = null;
+        let pendingDeleteType = 'report';
+
+        // Window Onload Handler
+        window.onload = async function() {
+            await db.init();
+            populateRHKDropdowns();
+            setDefaultTodayDate();
+            await loadSampleDataIfEmpty();
+            await refreshHeaderUser();
+            refreshDashboard();
+        };
+
+        function setDefaultTodayDate() {
+            const today = new Date().toISOString().split('T')[0];
+            const dateInput = document.getElementById('form-tanggal-laporan');
+            if (dateInput && !dateInput.value) {
+                dateInput.value = today;
+            }
+        }
+
+        async function refreshHeaderUser() {
+            const activeProf = await db.getActiveProfile();
+            const headerNameEl = document.getElementById('header-user-name');
+            const dashGreetingEl = document.getElementById('dash-greeting');
+            const warningBanner = document.getElementById('identitas-warning-banner');
+
+            if (activeProf && activeProf.nama) {
+                if (headerNameEl) headerNameEl.textContent = activeProf.nama;
+                if (dashGreetingEl) dashGreetingEl.textContent = `Selamat Datang, ${activeProf.nama}`;
+                if (warningBanner) warningBanner.classList.add('hidden');
+            } else {
+                if (headerNameEl) headerNameEl.textContent = 'Pendamping PKH';
+                if (dashGreetingEl) dashGreetingEl.textContent = 'Selamat Datang, Pendamping PKH';
+                if (warningBanner) warningBanner.classList.remove('hidden');
+            }
+        }
+
+        function populateRHKDropdowns() {
+            const formRhkSelect = document.getElementById('form-rhk-select');
+            const filterRhkSelect = document.getElementById('filter-rhk');
+
+            formRhkSelect.innerHTML = '<option value="">-- Pilih Rencana Hasil Kerja (RHK) --</option>';
+            filterRhkSelect.innerHTML = '<option value="">Semua RHK (1 - 9)</option>';
+
+            MASTER_RHK.forEach(rhk => {
+                const opt1 = document.createElement('option');
+                opt1.value = rhk.id;
+                opt1.textContent = `RHK ${rhk.id}: ${rhk.desc.substring(0, 75)}...`;
+                formRhkSelect.appendChild(opt1);
+
+                const opt2 = document.createElement('option');
+                opt2.value = rhk.id;
+                opt2.textContent = `RHK ${rhk.id}`;
+                filterRhkSelect.appendChild(opt2);
+            });
+        }
+
+        function handleRHKChange() {
+            const selectedRhkId = parseInt(document.getElementById('form-rhk-select').value, 10);
+            const choicesSelect = document.getElementById('form-pilihan-laporan');
+            const descBox = document.getElementById('rhk-desc-box');
+            const descText = document.getElementById('rhk-desc-text');
+
+            choicesSelect.innerHTML = '';
+
+            if (!selectedRhkId) {
+                choicesSelect.innerHTML = '<option value="">-- Pilih RHK Terlebih Dahulu --</option>';
+                descBox.classList.add('hidden');
+                return;
+            }
+
+            const foundRhk = MASTER_RHK.find(r => r.id === selectedRhkId);
+            if (foundRhk) {
+                descText.textContent = foundRhk.desc;
+                descBox.classList.remove('hidden');
+
+                choicesSelect.innerHTML = '<option value="">-- Pilih Pilihan Laporan Harian --</option>';
+                foundRhk.options.forEach(optStr => {
+                    const opt = document.createElement('option');
+                    opt.value = optStr;
+                    opt.textContent = optStr;
+                    choicesSelect.appendChild(opt);
+                });
+            }
+        }
+        window.handleRHKChange = handleRHKChange;
+
+        // Photo Upload Handling
+        function triggerPhotoUpload() {
+            document.getElementById('file-photo-input').click();
+        }
+        window.triggerPhotoUpload = triggerPhotoUpload;
+
+        function handlePhotoSelect(e) {
+            const files = Array.from(e.target.files);
+            if (files.length === 0) return;
+
+            let loaded = 0;
+            files.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = (evt) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        let width = img.width;
+                        let height = img.height;
+                        const maxDim = 1200;
+
+                        if (width > maxDim || height > maxDim) {
+                            if (width > height) {
+                                height = Math.round((height * maxDim) / width);
+                                width = maxDim;
+                            } else {
+                                width = Math.round((width * maxDim) / height);
+                                height = maxDim;
+                            }
+                        }
+
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        const compressedUrl = canvas.toDataURL('image/jpeg', 0.85);
+
+                        currentUploadedPhotos.push({
+                            file_name: file.name,
+                            file_url: compressedUrl,
+                            description: ''
+                        });
+
+                        loaded++;
+                        if (loaded === files.length) {
+                            renderPhotosList();
+                            showToast(`${files.length} foto berhasil ditambahkan!`);
+                            e.target.value = '';
+                        }
+                    };
+                    img.src = evt.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+        window.handlePhotoSelect = handlePhotoSelect;
+
+        function renderPhotosList() {
+            const container = document.getElementById('photos-container');
+            const notice = document.getElementById('no-photo-notice');
+
+            container.innerHTML = '';
+
+            if (currentUploadedPhotos.length === 0) {
+                notice.classList.remove('hidden');
+                return;
+            }
+
+            notice.classList.add('hidden');
+
+            currentUploadedPhotos.forEach((photo, idx) => {
+                const card = document.createElement('div');
+                card.className = 'bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col md:flex-row gap-4 items-start relative shadow-sm';
+                card.innerHTML = `
+                    <div class="w-full md:w-44 h-36 bg-slate-200 rounded-lg overflow-hidden border border-slate-300 shrink-0 relative">
+                        <img src="${photo.file_url}" class="w-full h-full object-cover" alt="Foto ${idx + 1}">
+                        <span class="absolute top-2 left-2 bg-kemensos-navy text-white font-bold text-[10px] px-2 py-0.5 rounded shadow">Foto ${idx + 1}</span>
+                    </div>
+                    <div class="flex-1 w-full space-y-2">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-bold text-slate-700 truncate max-w-[200px]"><i class="fa-regular fa-image"></i> ${escapeHtml(photo.file_name)}</span>
+                            <button type="button" onclick="window.removePhoto(${idx})" class="text-rose-600 hover:text-rose-800 text-xs font-semibold px-2 py-1 rounded bg-rose-50 hover:bg-rose-100 transition flex items-center gap-1">
+                                <i class="fa-solid fa-trash"></i> Hapus Foto
+                            </button>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-700 mb-1">Deskripsi Foto Dokumentasi <span class="text-rose-500">*</span></label>
+                            <textarea oninput="window.updatePhotoDescription(${idx}, this.value)" rows="2" placeholder="Jelaskan detail kegiatan dalam foto ini..." class="w-full text-xs p-2.5 border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-kemensos-navy bg-white">${escapeHtml(photo.description)}</textarea>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function removePhoto(index) {
+            currentUploadedPhotos.splice(index, 1);
+            renderPhotosList();
+            showToast('Foto berhasil dihapus');
+        }
+        window.removePhoto = removePhoto;
+
+        function updatePhotoDescription(index, val) {
+            if (currentUploadedPhotos[index]) {
+                currentUploadedPhotos[index].description = val;
+            }
+        }
+        window.updatePhotoDescription = updatePhotoDescription;
+
+        async function loadProfilesManager() {
+            const profiles = await db.getAllProfiles();
+            const activeProf = await db.getActiveProfile();
+            const grid = document.getElementById('profiles-grid');
+            grid.innerHTML = '';
+
+            if (profiles.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-full p-6 text-center bg-slate-50 rounded-xl border border-dashed border-slate-300 text-slate-500">
+                        <i class="fa-solid fa-id-badge text-3xl text-slate-400 mb-2"></i>
+                        <p class="text-xs font-medium">Belum ada akun profil pendamping tersimpan.</p>
+                        <p class="text-[11px] text-slate-400 mt-0.5">Isi form di bawah untuk membuat profil pertama Anda.</p>
+                    </div>
+                `;
+                createNewProfileForm();
+                return;
+            }
+
+            profiles.forEach(p => {
+                const isActive = activeProf && activeProf.id === p.id;
+                const card = document.createElement('div');
+                card.className = `p-4 rounded-xl border transition relative flex flex-col justify-between ${isActive ? 'bg-blue-50/70 border-kemensos-navy shadow-sm' : 'bg-slate-50 border-slate-200 hover:border-slate-300'}`;
+                
+                card.innerHTML = `
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-start">
+                            <span class="text-xs font-bold ${isActive ? 'bg-kemensos-navy text-white' : 'bg-slate-200 text-slate-700'} px-2.5 py-0.5 rounded-full shadow-sm">
+                                ${isActive ? '✓ AKUN AKTIF' : 'Profil Pendamping'}
+                            </span>
+                            ${p.ttd_url ? '<span class="text-[10px] text-emerald-700 bg-emerald-100 font-bold px-2 py-0.5 rounded"><i class="fa-solid fa-signature"></i> TTD Ada</span>' : ''}
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-slate-800 text-sm truncate">${escapeHtml(p.nama)}</h4>
+                            <p class="text-slate-500 text-xs font-mono">NIP: ${escapeHtml(p.nip)}</p>
+                        </div>
+                        <div class="text-[11px] text-slate-600 space-y-0.5 border-t border-slate-200/60 pt-2">
+                            <p class="truncate"><i class="fa-solid fa-location-dot text-amber-600"></i> ${escapeHtml(p.kelurahan)}, Kec. ${escapeHtml(p.kecamatan)}</p>
+                            <p class="truncate">${escapeHtml(p.kabupaten)}, ${escapeHtml(p.provinsi)}</p>
+                        </div>
+                    </div>
+
+                    <div class="pt-3 mt-3 border-t border-slate-200/80 flex items-center justify-between gap-1">
+                        ${!isActive ? `
+                            <button onclick="window.switchActiveProfile('${p.id}')" class="bg-kemensos-navy hover:bg-blue-950 text-white text-xs px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1 shadow-sm">
+                                <i class="fa-solid fa-check text-kemensos-gold"></i> Gunakan Akun
+                            </button>
+                        ` : '<span class="text-xs font-bold text-kemensos-navy italic"><i class="fa-solid fa-user-check"></i> Sedang Digunakan</span>'}
+
+                        <div class="flex space-x-1">
+                            <button onclick="window.editProfileForm('${p.id}')" title="Edit Profil" class="p-1.5 text-amber-700 hover:bg-amber-100 rounded text-xs"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="window.askDeleteProfile('${p.id}')" title="Hapus Profil" class="p-1.5 text-rose-700 hover:bg-rose-100 rounded text-xs"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+
+            if (activeProf && !document.getElementById('profile-edit-id').value) {
+                editProfileForm(activeProf.id);
+            }
+        }
+
+        async function switchActiveProfile(id) {
+            await db.setActiveProfileId(id);
+            showToast('Akun Pendamping berhasil diaktifkan!');
+            await refreshHeaderUser();
+            await loadProfilesManager();
+        }
+        window.switchActiveProfile = switchActiveProfile;
+
+        function createNewProfileForm() {
+            document.getElementById('form-identitas').reset();
+            document.getElementById('profile-edit-id').value = '';
+            document.getElementById('profile-form-title').innerHTML = '<i class="fa-solid fa-user-plus text-kemensos-navy"></i> Tambah Identitas Pendamping Baru';
+            currentTTDUrl = '';
+            displayTTDPreview('');
+        }
+        window.createNewProfileForm = createNewProfileForm;
+
+        async function editProfileForm(id) {
+            const profile = await db.getProfileById(id);
+            if (!profile) return;
+
+            document.getElementById('profile-edit-id').value = profile.id;
+            document.getElementById('profile-form-title').innerHTML = '<i class="fa-solid fa-user-pen text-amber-600"></i> Edit Identitas Pendamping';
+
+            document.getElementById('id_nama').value = profile.nama || '';
+            document.getElementById('id_nip').value = profile.nip || '';
+            document.getElementById('id_kelurahan').value = profile.kelurahan || '';
+            document.getElementById('id_kecamatan').value = profile.kecamatan || '';
+            document.getElementById('id_kabupaten').value = profile.kabupaten || '';
+            document.getElementById('id_provinsi').value = profile.provinsi || '';
+            document.getElementById('id_periode').value = profile.periode || 'Bulanan';
+            document.getElementById('id_tahun').value = profile.tahun || '2026';
+
+            currentTTDUrl = profile.ttd_url || '';
+            displayTTDPreview(currentTTDUrl);
+        }
+        window.editProfileForm = editProfileForm;
+
+        function handleTTDSelect(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+                    const maxDim = 400;
+
+                    if (width > maxDim || height > maxDim) {
+                        if (width > height) {
+                            height = Math.round((height * maxDim) / width);
+                            width = maxDim;
+                        } else {
+                            width = Math.round((width * maxDim) / height);
+                            height = maxDim;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    currentTTDUrl = canvas.toDataURL('image/png');
+                    displayTTDPreview(currentTTDUrl);
+                };
+                img.src = evt.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+        window.handleTTDSelect = handleTTDSelect;
+
+        function displayTTDPreview(url) {
+            const imgEl = document.getElementById('ttd-img');
+            const placeholderEl = document.getElementById('ttd-placeholder');
+            const removeBtn = document.getElementById('btn-remove-ttd');
+
+            if (url) {
+                imgEl.src = url;
+                imgEl.classList.remove('hidden');
+                placeholderEl.classList.add('hidden');
+                removeBtn.classList.remove('hidden');
+            } else {
+                imgEl.src = '';
+                imgEl.classList.add('hidden');
+                placeholderEl.classList.remove('hidden');
+                removeBtn.classList.add('hidden');
+            }
+        }
+
+        function removeTTDImage() {
+            currentTTDUrl = '';
+            displayTTDPreview('');
+            document.getElementById('id_ttd_input').value = '';
+        }
+        window.removeTTDImage = removeTTDImage;
+
+        async function saveIdentitas(e) {
+            e.preventDefault();
+            const editId = document.getElementById('profile-edit-id').value;
+            const profId = editId || `PROF-${Date.now()}`;
+
+            const profileObj = {
+                id: profId,
+                nama: document.getElementById('id_nama').value.trim(),
+                nip: document.getElementById('id_nip').value.trim(),
+                kelurahan: document.getElementById('id_kelurahan').value.trim(),
+                kecamatan: document.getElementById('id_kecamatan').value.trim(),
+                kabupaten: document.getElementById('id_kabupaten').value.trim(),
+                provinsi: document.getElementById('id_provinsi').value.trim(),
+                periode: document.getElementById('id_periode').value.trim(),
+                tahun: document.getElementById('id_tahun').value.trim(),
+                ttd_url: currentTTDUrl,
+                updated_at: new Date().toISOString()
+            };
+
+            await db.saveProfile(profileObj);
+
+            // Set as active if first profile or explicitly edited
+            const activeProf = await db.getActiveProfile();
+            if (!activeProf || activeProf.id === profId) {
+                await db.setActiveProfileId(profId);
+            }
+
+            showToast(editId ? 'Profil Pendamping berhasil diperbarui!' : 'Profil Pendamping baru berhasil ditambahkan!');
+            await refreshHeaderUser();
+            await loadProfilesManager();
+        }
+        window.saveIdentitas = saveIdentitas;
+
+        function askDeleteProfile(id) {
+            pendingDeleteId = id;
+            pendingDeleteType = 'profile';
+            document.getElementById('delete-modal-title').textContent = 'Hapus Profil Pendamping?';
+            document.getElementById('delete-modal-desc').textContent = 'Profil ini akan dihapus dari sistem.';
+            document.getElementById('confirm-delete-btn').onclick = confirmDeleteAction;
+            document.getElementById('modal-delete').classList.remove('hidden');
+        }
+        window.askDeleteProfile = askDeleteProfile;
+
+        // Report Operations
+        async function handleSaveReport(e) {
+            e.preventDefault();
+
+            const editId = document.getElementById('report-edit-id').value;
+            const tglLaporan = document.getElementById('form-tanggal-laporan').value;
+            const rhkId = parseInt(document.getElementById('form-rhk-select').value, 10);
+            const pilihanLaporan = document.getElementById('form-pilihan-laporan').value;
+            const uraian = document.getElementById('form-uraian').value.trim();
+            const hasilDicapai = document.getElementById('form-hasil-dicapai').value.trim();
+            const simpulanSaran = document.getElementById('form-simpulan-saran').value.trim();
+            const lokasi = document.getElementById('form-lokasi').value.trim();
+            const keterangan = document.getElementById('form-keterangan').value.trim();
+
+            if (!tglLaporan || !rhkId || !pilihanLaporan || !uraian || !hasilDicapai || !simpulanSaran || !lokasi) {
+                showToast('Harap isi semua kolom wajib (*)!', 'error');
+                return;
+            }
+
+            for (let i = 0; i < currentUploadedPhotos.length; i++) {
+                if (!currentUploadedPhotos[i].description || currentUploadedPhotos[i].description.trim() === '') {
+                    showToast(`Deskripsi Foto ${i + 1} wajib diisi!`, 'error');
+                    return;
+                }
+            }
+
+            const cleanDateStr = tglLaporan.replace(/-/g, '');
+            const randomNum = Math.floor(100 + Math.random() * 900);
+            const generatedNo = `LP-PKH-${cleanDateStr}-${randomNum}`;
+
+            const activeProf = await db.getActiveProfile();
+
+            const reportData = {
+                id: editId || `RPT-${Date.now()}`,
+                nomor_laporan: editId ? (await db.getReportById(editId))?.nomor_laporan || generatedNo : generatedNo,
+                tanggal_laporan: tglLaporan,
+                rhk_id: rhkId,
+                pilihan_laporan: pilihanLaporan,
+                uraian: uraian,
+                hasil_dicapai: hasilDicapai,
+                simpulan_saran: simpulanSaran,
+                lokasi: lokasi,
+                keterangan: keterangan,
+                profile_id: activeProf ? activeProf.id : null,
+                photos: currentUploadedPhotos,
+                created_at: editId ? (await db.getReportById(editId))?.created_at || new Date().toISOString() : new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            };
+
+            await db.saveReport(reportData);
+            showToast(editId ? 'Laporan harian berhasil diperbarui!' : 'Laporan harian baru berhasil disimpan!');
+            resetReportForm();
+            navTo('data');
+        }
+        window.handleSaveReport = handleSaveReport;
+
+        function resetReportForm() {
+            document.getElementById('form-laporan').reset();
+            document.getElementById('report-edit-id').value = '';
+            document.getElementById('form-title').innerHTML = '<i class="fa-solid fa-circle-plus text-kemensos-navy"></i> Tambah Laporan Harian';
+            document.getElementById('rhk-desc-box').classList.add('hidden');
+            currentUploadedPhotos = [];
+            renderPhotosList();
+            setDefaultTodayDate();
+        }
+        window.resetReportForm = resetReportForm;
+
+        function handleLogoSelect(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+                    const maxDim = 300;
+
+                    if (width > maxDim || height > maxDim) {
+                        if (width > height) {
+                            height = Math.round((height * maxDim) / width);
+                            width = maxDim;
+                        } else {
+                            width = Math.round((width * maxDim) / height);
+                            height = maxDim;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    currentKopLogoUrl = canvas.toDataURL('image/png');
+                    displayLogoPreview(currentKopLogoUrl);
+                };
+                img.src = evt.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+        window.handleLogoSelect = handleLogoSelect;
+
+        function displayLogoPreview(url) {
+            const imgEl = document.getElementById('kop-logo-img');
+            const placeholderEl = document.getElementById('kop-logo-placeholder');
+            const removeBtn = document.getElementById('btn-remove-logo');
+
+            if (url) {
+                imgEl.src = url;
+                imgEl.classList.remove('hidden');
+                placeholderEl.classList.add('hidden');
+                removeBtn.classList.remove('hidden');
+            } else {
+                imgEl.src = '';
+                imgEl.classList.add('hidden');
+                placeholderEl.classList.remove('hidden');
+                removeBtn.classList.add('hidden');
+            }
+        }
+
+        function removeKopLogo() {
+            currentKopLogoUrl = '';
+            displayLogoPreview('');
+            document.getElementById('kop_logo_input').value = '';
+        }
+        window.removeKopLogo = removeKopLogo;
+
+        async function loadKopSettings() {
+            const kop = await db.getSetting('kop_surat') || {
+                line1: "KEMENTERIAN SOSIAL REPUBLIK INDONESIA",
+                line2: "DIREKTORAT JENDERAL PERLINDUNGAN DAN JAMINAN SOSIAL",
+                line3: "DIREKTORAT PERLINDUNGAN SOSIAL NON KEBENCANAAN",
+                address: "JL. Salemba Raya No. 28 Jakarta Pusat Tlp (021)22804288 http://kemensos.go.id/",
+                kota_ttd: "Bandar Lampung",
+                jabatan: "Pengelola Layanan Operasional",
+                logo_url: ""
+            };
+
+            document.getElementById('kop_line1').value = kop.line1 || '';
+            document.getElementById('kop_line2').value = kop.line2 || '';
+            document.getElementById('kop_line3').value = kop.line3 || '';
+            document.getElementById('kop_address').value = kop.address || '';
+            document.getElementById('kop_kota_ttd').value = kop.kota_ttd || '';
+            document.getElementById('kop_jabatan').value = kop.jabatan || '';
+
+            currentKopLogoUrl = kop.logo_url || '';
+            displayLogoPreview(currentKopLogoUrl);
+        }
+
+        async function saveKopSettings(e) {
+            e.preventDefault();
+            const kop = {
+                line1: document.getElementById('kop_line1').value.trim(),
+                line2: document.getElementById('kop_line2').value.trim(),
+                line3: document.getElementById('kop_line3').value.trim(),
+                address: document.getElementById('kop_address').value.trim(),
+                kota_ttd: document.getElementById('kop_kota_ttd').value.trim(),
+                jabatan: document.getElementById('kop_jabatan').value.trim(),
+                logo_url: currentKopLogoUrl
+            };
+
+            await db.saveSetting('kop_surat', kop);
+            showToast('Pengaturan Kop Surat & Logo berhasil disimpan!');
+        }
+        window.saveKopSettings = saveKopSettings;
+
+        function populateMasterRhkSelects() {
+            const select = document.getElementById('master-rhk-select');
+            select.innerHTML = '<option value="">-- Pilih RHK --</option>';
+            MASTER_RHK.forEach(rhk => {
+                const opt = document.createElement('option');
+                opt.value = rhk.id;
+                opt.textContent = `RHK ${rhk.id}: ${rhk.desc.substring(0, 60)}...`;
+                select.appendChild(opt);
+            });
+        }
+
+        function handleMasterRhkSelect() {
+            const rhkId = parseInt(document.getElementById('master-rhk-select').value, 10);
+            const choicesSelect = document.getElementById('master-pilihan-select');
+            const editor = document.getElementById('master-tpl-editor');
+
+            choicesSelect.innerHTML = '<option value="">-- Pilih Pilihan Laporan Harian --</option>';
+            editor.classList.add('hidden');
+
+            if (!rhkId) return;
+
+            const foundRhk = MASTER_RHK.find(r => r.id === rhkId);
+            if (foundRhk) {
+                foundRhk.options.forEach(optStr => {
+                    const opt = document.createElement('option');
+                    opt.value = optStr;
+                    opt.textContent = optStr;
+                    choicesSelect.appendChild(opt);
+                });
+            }
+        }
+        window.handleMasterRhkSelect = handleMasterRhkSelect;
+
+        async function loadRHKTemplateForSelected() {
+            const optVal = document.getElementById('master-pilihan-select').value;
+            const editor = document.getElementById('master-tpl-editor');
+
+            if (!optVal) {
+                editor.classList.add('hidden');
+                return;
+            }
+
+            editor.classList.remove('hidden');
+            const allTemplates = await db.getSetting('rhk_templates') || {};
+            const tpl = allTemplates[optVal] || {};
+
+            document.getElementById('tpl_umum').value = tpl.umum || '';
+            document.getElementById('tpl_maksud_tujuan').value = tpl.maksud_tujuan || '';
+            document.getElementById('tpl_ruang_lingkup').value = tpl.ruang_lingkup || '';
+            document.getElementById('tpl_dasar').value = tpl.dasar || '';
+            document.getElementById('tpl_waktu_pelaksanaan').value = tpl.waktu_pelaksanaan || '';
+            document.getElementById('tpl_pelaksanaan_kegiatan').value = tpl.pelaksanaan_kegiatan || '';
+        }
+        window.loadRHKTemplateForSelected = loadRHKTemplateForSelected;
+
+        async function saveRHKTemplateText() {
+            const optVal = document.getElementById('master-pilihan-select').value;
+            if (!optVal) return;
+
+            const allTemplates = await db.getSetting('rhk_templates') || {};
+            allTemplates[optVal] = {
+                umum: document.getElementById('tpl_umum').value.trim(),
+                maksud_tujuan: document.getElementById('tpl_maksud_tujuan').value.trim(),
+                ruang_lingkup: document.getElementById('tpl_ruang_lingkup').value.trim(),
+                dasar: document.getElementById('tpl_dasar').value.trim(),
+                waktu_pelaksanaan: document.getElementById('tpl_waktu_pelaksanaan').value.trim(),
+                pelaksanaan_kegiatan: document.getElementById('tpl_pelaksanaan_kegiatan').value.trim()
+            };
+
+            await db.saveSetting('rhk_templates', allTemplates);
+            showToast('Template teks narasi RHK berhasil disimpan!');
+        }
+        window.saveRHKTemplateText = saveRHKTemplateText;
+
+        // Data Table & Filters
+        async function loadReportsTable() {
+            const allReports = await db.getAllReports();
+            renderReportsTable(allReports);
+        }
+
+        function renderReportsTable(reports) {
+            const tbody = document.getElementById('reports-table-body');
+            const countLabel = document.getElementById('reports-count-label');
+            tbody.innerHTML = '';
+
+            countLabel.textContent = `Menampilkan ${reports.length} laporan`;
+
+            if (reports.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400">Tidak ada data laporan ditemukan.</td></tr>`;
+                return;
+            }
+
+            const sorted = [...reports].sort((a,b) => new Date(b.tanggal_laporan) - new Date(a.tanggal_laporan));
+
+            sorted.forEach((rpt, idx) => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50 transition border-b border-slate-100';
+                tr.innerHTML = `
+                    <td class="p-3 text-center font-medium text-slate-500">${idx + 1}</td>
+                    <td class="p-3 font-semibold text-slate-800">${formatDateID(rpt.tanggal_laporan)}</td>
+                    <td class="p-3 text-center"><span class="bg-blue-100 text-kemensos-navy font-bold text-[10px] px-2 py-0.5 rounded">RHK ${rpt.rhk_id}</span></td>
+                    <td class="p-3">
+                        <div class="font-bold text-slate-800 text-xs">${escapeHtml(rpt.pilihan_laporan)}</div>
+                        <div class="text-slate-500 text-[11px] line-clamp-2 mt-0.5">${escapeHtml(rpt.uraian)}</div>
+                    </td>
+                    <td class="p-3 font-medium text-slate-700">${escapeHtml(rpt.lokasi)}</td>
+                    <td class="p-3 text-center font-semibold text-blue-700">📷 ${rpt.photos ? rpt.photos.length : 0} Foto</td>
+                    <td class="p-3 text-center">
+                        <div class="flex items-center justify-center space-x-1">
+                            <button onclick="window.viewReportDetail('${rpt.id}')" title="Detail" class="p-1.5 text-blue-600 hover:bg-blue-50 rounded"><i class="fa-solid fa-eye"></i></button>
+                            <button onclick="window.editReport('${rpt.id}')" title="Edit" class="p-1.5 text-amber-600 hover:bg-amber-50 rounded"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="window.generateSinglePDF('${rpt.id}')" title="PDF" class="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded"><i class="fa-solid fa-file-pdf"></i></button>
+                            <button onclick="window.askDeleteReport('${rpt.id}')" title="Hapus" class="p-1.5 text-rose-600 hover:bg-rose-50 rounded"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function applyFilters() {
+            const searchVal = document.getElementById('filter-search').value.toLowerCase().trim();
+            const dateStart = document.getElementById('filter-date-start').value;
+            const dateEnd = document.getElementById('filter-date-end').value;
+            const rhkVal = document.getElementById('filter-rhk').value;
+            const monthVal = document.getElementById('filter-month').value;
+
+            let reports = await db.getAllReports();
+
+            reports = reports.filter(r => {
+                if (searchVal) {
+                    const matchUraian = r.uraian.toLowerCase().includes(searchVal);
+                    const matchLokasi = r.lokasi.toLowerCase().includes(searchVal);
+                    const matchPilihan = r.pilihan_laporan.toLowerCase().includes(searchVal);
+                    if (!matchUraian && !matchLokasi && !matchPilihan) return false;
+                }
+
+                if (dateStart && r.tanggal_laporan < dateStart) return false;
+                if (dateEnd && r.tanggal_laporan > dateEnd) return false;
+                if (rhkVal && r.rhk_id != rhkVal) return false;
+
+                if (monthVal) {
+                    const parts = r.tanggal_laporan.split('-');
+                    if (parts[1] !== monthVal) return false;
+                }
+
+                return true;
+            });
+
+            renderReportsTable(reports);
+        }
+        window.applyFilters = applyFilters;
+
+        function resetFilters() {
+            document.getElementById('filter-search').value = '';
+            document.getElementById('filter-date-start').value = '';
+            document.getElementById('filter-date-end').value = '';
+            document.getElementById('filter-rhk').value = '';
+            document.getElementById('filter-month').value = '';
+            loadReportsTable();
+        }
+        window.resetFilters = resetFilters;
+
+        async function editReport(id) {
+            const report = await db.getReportById(id);
+            if (!report) return;
+
+            document.getElementById('report-edit-id').value = report.id;
+            document.getElementById('form-title').innerHTML = '<i class="fa-solid fa-pen-to-square text-amber-600"></i> Edit Laporan Harian';
+            document.getElementById('form-tanggal-laporan').value = report.tanggal_laporan;
+
+            document.getElementById('form-rhk-select').value = report.rhk_id;
+            handleRHKChange();
+
+            document.getElementById('form-pilihan-laporan').value = report.pilihan_laporan;
+            document.getElementById('form-uraian').value = report.uraian || '';
+            document.getElementById('form-hasil-dicapai').value = report.hasil_dicapai || '';
+            document.getElementById('form-simpulan-saran').value = report.simpulan_saran || '';
+            document.getElementById('form-lokasi').value = report.lokasi || '';
+            document.getElementById('form-keterangan').value = report.keterangan || '';
+
+            currentUploadedPhotos = report.photos ? [...report.photos] : [];
+            renderPhotosList();
+
+            navTo('tambah');
+        }
+        window.editReport = editReport;
+
+        function askDeleteReport(id) {
+            pendingDeleteId = id;
+            pendingDeleteType = 'report';
+            document.getElementById('delete-modal-title').textContent = 'Hapus Laporan Harian?';
+            document.getElementById('delete-modal-desc').textContent = 'Tindakan ini tidak dapat dibatalkan. Data laporan dan foto terkait akan dihapus secara permanen.';
+            document.getElementById('confirm-delete-btn').onclick = confirmDeleteAction;
+            document.getElementById('modal-delete').classList.remove('hidden');
+        }
+        window.askDeleteReport = askDeleteReport;
+
+        async function confirmDeleteAction() {
+            if (!pendingDeleteId) return;
+
+            if (pendingDeleteType === 'report') {
+                await db.deleteReport(pendingDeleteId);
+                showToast('Laporan berhasil dihapus!');
+                refreshDashboard();
+                loadReportsTable();
+            } else if (pendingDeleteType === 'profile') {
+                await db.deleteProfile(pendingDeleteId);
+                showToast('Profil Pendamping berhasil dihapus!');
+                await refreshHeaderUser();
+                await loadProfilesManager();
+            }
+
+            closeModal('modal-delete');
+            pendingDeleteId = null;
+        }
+
+        async function generateSinglePDF(reportId) {
+            const report = await db.getReportById(reportId);
+            if (!report) return;
+
+            // Get profile associated with report, or active profile
+            let profile = null;
+            if (report.profile_id) {
+                profile = await db.getProfileById(report.profile_id);
+            }
+            if (!profile) {
+                profile = await db.getActiveProfile() || {};
+            }
+
+            const kop = await db.getSetting('kop_surat') || {
+                line1: "KEMENTERIAN SOSIAL REPUBLIK INDONESIA",
+                line2: "DIREKTORAT JENDERAL PERLINDUNGAN DAN JAMINAN SOSIAL",
+                line3: "DIREKTORAT PERLINDUNGAN SOSIAL NON KEBENCANAAN",
+                address: "JL. Salemba Raya No. 28 Jakarta Pusat Tlp (021)22804288 http://kemensos.go.id/",
+                kota_ttd: "Bandar Lampung",
+                jabatan: "Pengelola Layanan Operasional",
+                logo_url: ""
+            };
+
+            const rhkMaster = MASTER_RHK.find(r => r.id === report.rhk_id);
+            const allTemplates = await db.getSetting('rhk_templates') || {};
+            const customTpl = allTemplates[report.pilihan_laporan] || {};
+
+            showToast('Menyiapkan file PDF Kemensos...');
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const pageHeight = doc.internal.pageSize.getHeight();
+            const margin = 18;
+            const contentWidth = pageWidth - (margin * 2);
+            let currentY = 15;
+
+            function checkPageBreak(heightNeeded) {
+                if (currentY + heightNeeded > pageHeight - 18) {
+                    doc.addPage();
+                    currentY = 20;
+                    return true;
+                }
+                return false;
+            }
+
+            // 1. DYNAMIC KOP SURAT WITH LOGO INSTANSI
+            if (kop.logo_url) {
+                try {
+                    doc.addImage(kop.logo_url, 'PNG', margin, 12, 18, 18);
+                } catch(err) {
+                    console.error("Error drawing logo in PDF:", err);
+                }
+            }
+
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(11);
+            doc.text(kop.line1 || "KEMENTERIAN SOSIAL REPUBLIK INDONESIA", pageWidth / 2, currentY, { align: "center" });
+            currentY += 4.5;
+            doc.setFontSize(10);
+            doc.text(kop.line2 || "DIREKTORAT JENDERAL PERLINDUNGAN DAN JAMINAN SOSIAL", pageWidth / 2, currentY, { align: "center" });
+            currentY += 4.5;
+            doc.setFontSize(9);
+            doc.text(kop.line3 || "DIREKTORAT PERLINDUNGAN SOSIAL NON KEBENCANAAN", pageWidth / 2, currentY, { align: "center" });
+            currentY += 4;
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(7.5);
+            doc.text(kop.address || "JL. Salemba Raya No. 28 Jakarta Pusat", pageWidth / 2, currentY, { align: "center" });
+            currentY += 3;
+
+            doc.setLineWidth(0.8);
+            doc.line(margin, currentY, pageWidth - margin, currentY);
+            doc.setLineWidth(0.2);
+            doc.line(margin, currentY + 0.8, pageWidth - margin, currentY + 0.8);
+            currentY += 7;
+
+            const dateParts = report.tanggal_laporan.split('-');
+            const yearStr = dateParts[0] || '2026';
+            const monthIdx = parseInt(dateParts[1] || '1', 10) - 1;
+            const monthNamesUpper = ["JANUARI", "FEBRUARI", "MARET", "APRIL", "MEI", "JUNI", "JULI", "AGUSTUS", "SEPTEMBER", "OKTOBER", "NOVEMBER", "DESEMBER"];
+            const monthStrUpper = monthNamesUpper[monthIdx] || 'JANUARI';
+
+            // 2. JUDUL LAPORAN RESMI
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(11);
+            doc.text("LAPORAN TENTANG", pageWidth / 2, currentY, { align: "center" });
+            currentY += 5;
+            doc.setFontSize(10.5);
+            const titleUpper = (report.pilihan_laporan || "KEGIATAN PENDAMPINGAN PKH").toUpperCase();
+            const splitTitle = doc.splitTextToSize(titleUpper, contentWidth);
+            doc.text(splitTitle, pageWidth / 2, currentY, { align: "center" });
+            currentY += (splitTitle.length * 5);
+
+            const kelurahanStr = profile.kelurahan ? `${profile.kelurahan.toUpperCase()} ` : '';
+            const locationSubhead = `${kelurahanStr}KECAMATAN ${(profile.kecamatan || "KEDAMAIAN").toUpperCase()}`;
+            const regionSubhead = `${(profile.kabupaten || "KOTA BANDAR LAMPUNG").toUpperCase()} PROVINSI ${(profile.provinsi || "LAMPUNG").toUpperCase()}`;
+            doc.text(locationSubhead, pageWidth / 2, currentY, { align: "center" });
+            currentY += 4.5;
+            doc.text(regionSubhead, pageWidth / 2, currentY, { align: "center" });
+            currentY += 4.5;
+            doc.text(`BULAN ${monthStrUpper} TAHUN ${yearStr}`, pageWidth / 2, currentY, { align: "center" });
+            currentY += 8;
+
+            // 3. A. PENDAHULUAN
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(10);
+            doc.text("A. Pendahuluan", margin, currentY);
+            currentY += 5;
+
+            // A.1. Umum
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(9);
+            doc.text("1. Umum", margin + 3, currentY);
+            currentY += 4.5;
+
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(8.5);
+            const defaultUmum = "Program Keluarga Harapan (PKH) merupakan salah satu program bantuan sosial bersyarat yang dikelola Kementerian Sosial RI untuk meningkatkan kualitas hidup KPM melalui perlindungan sosial, kesehatan, pendidikan, dan kesejahteraan.";
+            const umumText = customTpl.umum || defaultUmum;
+            const splitUmum = doc.splitTextToSize(umumText, contentWidth - 3);
+            doc.text(splitUmum, margin + 3, currentY);
+            currentY += (splitUmum.length * 3.8) + 3;
+
+            checkPageBreak(30);
+
+            // A.2. Maksud dan Tujuan
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(9);
+            doc.text("2. Maksud dan Tujuan", margin + 3, currentY);
+            currentY += 4.5;
+
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(8.5);
+            if (customTpl.maksud_tujuan) {
+                const splitMT = doc.splitTextToSize(customTpl.maksud_tujuan, contentWidth - 6);
+                doc.text(splitMT, margin + 6, currentY);
+                currentY += (splitMT.length * 3.8) + 3;
+            } else {
+                doc.text("Maksud:", margin + 3, currentY);
+                currentY += 4;
+                const maksudText = "Laporan ini disusun sebagai bentuk pertanggungjawaban serta dokumentasi resmi pelaksanaan " + (report.pilihan_laporan || "kegiatan PKH") + ".";
+                const splitMaksud = doc.splitTextToSize(maksudText, contentWidth - 6);
+                doc.text(splitMaksud, margin + 6, currentY);
+                currentY += (splitMaksud.length * 3.8) + 2;
+
+                doc.text("Tujuan :", margin + 3, currentY);
+                currentY += 4;
+                const tujuans = [
+                    "a) Menyampaikan informasi akurat tentang tata cara pelaksanaan kegiatan pendampingan.",
+                    "b) Memberikan wujud akuntabilitas dan transparansi pelaksanaan tugas pendamping PKH.",
+                    "c) Meningkatkan kualitas pemahaman dan kemandirian KPM."
+                ];
+                tujuans.forEach(tj => {
+                    const splitTj = doc.splitTextToSize(tj, contentWidth - 6);
+                    doc.text(splitTj, margin + 6, currentY);
+                    currentY += (splitTj.length * 3.8) + 1;
+                });
+                currentY += 2;
+            }
+
+            checkPageBreak(30);
+
+            // A.3. Ruang Lingkup
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(9);
+            doc.text("3. Ruang Lingkup", margin + 3, currentY);
+            currentY += 4.5;
+
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(8.5);
+            if (customTpl.ruang_lingkup) {
+                const splitRL = doc.splitTextToSize(customTpl.ruang_lingkup, contentWidth - 6);
+                doc.text(splitRL, margin + 6, currentY);
+                currentY += (splitRL.length * 3.8) + 3;
+            } else {
+                const rlkps = [
+                    "a. Materi Sosialisasi / Edukasi: Penjelasan teknis mengenai " + report.pilihan_laporan + ".",
+                    "b. Sasaran dan Metode: Diberikan kepada keluarga penerima manfaat dan pihak terkait di " + report.lokasi + ".",
+                    "c. Output Laporan: Ringkasan hasil kegiatan, tingkat pemahaman masyarakat, serta dokumentasi foto."
+                ];
+                rlkps.forEach(rl => {
+                    const splitRl = doc.splitTextToSize(rl, contentWidth - 6);
+                    doc.text(splitRl, margin + 6, currentY);
+                    currentY += (splitRl.length * 3.8) + 1;
+                });
+                currentY += 2;
+            }
+
+            checkPageBreak(30);
+
+            // A.4. Dasar
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(9);
+            doc.text("4. Dasar", margin + 3, currentY);
+            currentY += 4.5;
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(8.5);
+
+            if (customTpl.dasar) {
+                const splitDsr = doc.splitTextToSize(customTpl.dasar, contentWidth - 6);
+                doc.text(splitDsr, margin + 6, currentY);
+                currentY += (splitDsr.length * 3.8) + 3;
+            } else {
+                const dasars = [
+                    "a) Undang-Undang Nomor 11 Tahun 2009 tentang Kesejahteraan Sosial.",
+                    "b) Undang-Undang Nomor 13 Tahun 2011 tentang Penanganan Fakir Miskin.",
+                    "c) SK Dirjen tentang Petunjuk Teknis Pelaksanaan Program Keluarga Harapan.",
+                    "d) Rencana Hasil Kerja (RHK " + report.rhk_id + "): " + (rhkMaster ? rhkMaster.desc : "Tugas Pendamping Sosial PKH.")
+                ];
+                dasars.forEach(ds => {
+                    const splitDs = doc.splitTextToSize(ds, contentWidth - 6);
+                    doc.text(splitDs, margin + 6, currentY);
+                    currentY += (splitDs.length * 3.8) + 1;
+                });
+                currentY += 4;
+            }
+
+            checkPageBreak(40);
+
+            // 4. B. KEGIATAN YANG DILAKSANAKAN
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(10);
+            doc.text("B. Kegiatan yang Dilaksanakan", margin, currentY);
+            currentY += 5;
+
+            // B.1. Waktu Pelaksanaan
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(9);
+            doc.text("1. Waktu Pelaksanaan", margin + 3, currentY);
+            currentY += 4.5;
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(8.5);
+
+            if (customTpl.waktu_pelaksanaan) {
+                const splitWP = doc.splitTextToSize(customTpl.waktu_pelaksanaan, contentWidth - 6);
+                doc.text(splitWP, margin + 6, currentY);
+                currentY += (splitWP.length * 3.8) + 3;
+            } else {
+                doc.text("Tanggal Kegiatan : " + formatDateID(report.tanggal_laporan), margin + 6, currentY);
+                currentY += 4;
+                doc.text("Lokasi Kegiatan   : " + report.lokasi, margin + 6, currentY);
+                currentY += 5;
+            }
+
+            checkPageBreak(30);
+
+            // B.2. Pelaksanaan Kegiatan
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(9);
+            doc.text("2. Pelaksanaan Kegiatan", margin + 3, currentY);
+            currentY += 4.5;
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(8.5);
+
+            const executionText = customTpl.pelaksanaan_kegiatan ? `${customTpl.pelaksanaan_kegiatan}\n\n${report.uraian}` : report.uraian;
+            const splitUraian = doc.splitTextToSize(executionText, contentWidth - 6);
+            doc.text(splitUraian, margin + 6, currentY);
+            currentY += (splitUraian.length * 3.8) + 4;
+
+            checkPageBreak(35);
+
+            // 5. C. HASIL YANG DICAPAI
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(10);
+            doc.text("C. Hasil yang Dicapai", margin, currentY);
+            currentY += 5;
+
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(8.5);
+            const textHasil = report.hasil_dicapai || "Pelaksanaan kegiatan " + report.pilihan_laporan + " telah berjalan lancar, tertib, serta mencapai sasaran yang ditetapkan.";
+            const splitHasil = doc.splitTextToSize(textHasil, contentWidth - 3);
+            doc.text(splitHasil, margin + 3, currentY);
+            currentY += (splitHasil.length * 3.8) + 4;
+
+            checkPageBreak(35);
+
+            // 6. D. SIMPULAN DAN SARAN
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(10);
+            doc.text("D. Simpulan dan Saran", margin, currentY);
+            currentY += 5;
+
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(8.5);
+
+            const textSimpulanSaran = report.simpulan_saran || "Kesimpulan: Kegiatan berjalan baik dan tepat sasaran.\n\nSaran: Perlu koordinasi dan pendampingan berkelanjutan secara rutin.";
+            const splitSS = doc.splitTextToSize(textSimpulanSaran, contentWidth - 3);
+            doc.text(splitSS, margin + 3, currentY);
+            currentY += (splitSS.length * 3.8) + 4;
+
+            checkPageBreak(30);
+
+            // 7. E. PENUTUP
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(10);
+            doc.text("E. Penutup", margin, currentY);
+            currentY += 5;
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(8.5);
+            const penutupText = "Demikian laporan pelaksanaan kegiatan ini dibuat dengan sebenarnya sebagai bahan evaluasi dan pertanggungjawaban pelaksanaan tugas Pendamping Program Keluarga Harapan (PKH).";
+            const splitPenutup = doc.splitTextToSize(penutupText, contentWidth - 3);
+            doc.text(splitPenutup, margin + 3, currentY);
+            currentY += (splitPenutup.length * 3.8) + 8;
+
+            checkPageBreak(45);
+
+            // 8. TANDA TANGAN PENDAMPING PKH
+            const cityFormatted = kop.kota_ttd || profile.kabupaten || "Bandar Lampung";
+            const dateFormatted = formatDateID(report.tanggal_laporan);
+
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(8.5);
+
+            const sigRightX = pageWidth - margin - 65;
+
+            doc.text("Dibuat di : " + cityFormatted, sigRightX, currentY);
+            currentY += 4;
+            doc.text("pada tanggal : " + dateFormatted, sigRightX, currentY);
+            currentY += 6;
+
+            doc.text(kop.jabatan || "Pengelola Layanan Operasional,", sigRightX, currentY);
+            currentY += 2;
+
+            // DRAW DIGITAL SIGNATURE IMAGE IF AVAILABLE
+            if (profile.ttd_url) {
+                try {
+                    doc.addImage(profile.ttd_url, 'PNG', sigRightX, currentY, 35, 18);
+                    currentY += 19;
+                } catch(err) {
+                    console.error("Error drawing signature image in PDF:", err);
+                    currentY += 18;
+                }
+            } else {
+                currentY += 18;
+            }
+
+            doc.setFont("helvetica", "bold");
+            doc.text(profile.nama || "(..........................................)", sigRightX, currentY);
+            currentY += 4;
+
+            doc.setFont("helvetica", "normal");
+            doc.text(`NIP. ${profile.nip || '.......................'}`, sigRightX, currentY);
+
+            // 9. LAMPIRAN DOKUMENTASI FOTO
+            if (report.photos && report.photos.length > 0) {
+                doc.addPage();
+                currentY = 20;
+
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(12);
+                doc.text("LAMPIRAN DOKUMENTASI", pageWidth / 2, currentY, { align: "center" });
+                currentY += 5;
+                doc.setFontSize(10);
+                doc.text("FOTO DOKUMENTASI KEGIATAN", pageWidth / 2, currentY, { align: "center" });
+                currentY += 8;
+
+                doc.setLineWidth(0.5);
+                doc.line(margin, currentY, pageWidth - margin, currentY);
+                currentY += 8;
+
+                for (let i = 0; i < report.photos.length; i++) {
+                    const photo = report.photos[i];
+
+                    if (currentY + 80 > pageHeight - 20) {
+                        doc.addPage();
+                        currentY = 20;
+                    }
+
+                    try {
+                        const imgWidth = 120;
+                        const imgHeight = 75;
+                        const imgX = (pageWidth - imgWidth) / 2;
+
+                        doc.addImage(photo.file_url, 'JPEG', imgX, currentY, imgWidth, imgHeight);
+                        currentY += imgHeight + 4;
+
+                        doc.setFont("helvetica", "bold");
+                        doc.setFontSize(8.5);
+                        const labelStr = `Gambar ${i + 1} `;
+                        
+                        doc.setFont("helvetica", "normal");
+                        const captionStr = photo.description || 'Dokumentasi pelaksanaan kegiatan pendampingan KPM PKH.';
+                        
+                        const fullCaption = labelStr + captionStr;
+                        const splitCaption = doc.splitTextToSize(fullCaption, 140);
+
+                        const capX = (pageWidth - 140) / 2;
+                        doc.text(splitCaption, capX, currentY, { align: "left" });
+
+                        currentY += (splitCaption.length * 4) + 10;
+                    } catch (err) {
+                        console.error('Error rendering image in PDF:', err);
+                        currentY += 10;
+                    }
+                }
+            }
+
+            // 10. PAGE NUMBERS
+            const pageCount = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= pageCount; i++) {
+                doc.setPage(i);
+                doc.setFontSize(8);
+                doc.setFont("helvetica", "normal");
+                doc.text(`Halaman ${i} dari ${pageCount}`, pageWidth - margin, 287, { align: 'right' });
+            }
+
+            doc.save(`Laporan_PKH_${report.tanggal_laporan}.pdf`);
+            showToast('PDF Laporan Kemensos berhasil diunduh!');
+        }
+        window.generateSinglePDF = generateSinglePDF;
+
+        // Dashboard & Analytics Engine
+        async function refreshDashboard() {
+            const allReports = await db.getAllReports();
+            const todayStr = new Date().toISOString().split('T')[0];
+            const currentYearStr = new Date().getFullYear().toString();
+            const currentMonthStr = (new Date().getMonth() + 1).toString().padStart(2, '0');
+
+            let todayCount = 0;
+            let monthCount = 0;
+            let yearCount = 0;
+            let totalPhotoCount = 0;
+            const rhkCounts = {1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0};
+
+            allReports.forEach(r => {
+                if (r.tanggal_laporan === todayStr) todayCount++;
+                
+                const parts = r.tanggal_laporan.split('-');
+                if (parts[0] === currentYearStr) {
+                    yearCount++;
+                    if (parts[1] === currentMonthStr) {
+                        monthCount++;
+                    }
+                }
+
+                if (r.photos) totalPhotoCount += r.photos.length;
+                if (r.rhk_id && rhkCounts[r.rhk_id] !== undefined) {
+                    rhkCounts[r.rhk_id]++;
+                }
+            });
+
+            document.getElementById('stat-today').textContent = todayCount;
+            document.getElementById('stat-month').textContent = monthCount;
+            document.getElementById('stat-year').textContent = yearCount;
+            document.getElementById('stat-photos').textContent = totalPhotoCount;
+
+            const rhkGrid = document.getElementById('rhk-stat-grid');
+            rhkGrid.innerHTML = '';
+            MASTER_RHK.forEach(rhk => {
+                const count = rhkCounts[rhk.id] || 0;
+                const card = document.createElement('div');
+                card.className = 'bg-slate-50 border border-slate-200 rounded-xl p-3 flex justify-between items-center';
+                card.innerHTML = `
+                    <div>
+                        <span class="text-[11px] font-bold text-kemensos-navy bg-blue-100 px-2 py-0.5 rounded">RHK ${rhk.id}</span>
+                        <p class="text-xs text-slate-600 line-clamp-1 mt-1 font-medium">${rhk.desc}</p>
+                    </div>
+                    <span class="text-lg font-bold text-slate-800 ml-2 bg-white px-2.5 py-1 rounded-lg border border-slate-200">${count}</span>
+                `;
+                rhkGrid.appendChild(card);
+            });
+
+            const recentTable = document.getElementById('dashboard-recent-table');
+            recentTable.innerHTML = '';
+
+            const sorted = [...allReports].sort((a,b) => new Date(b.tanggal_laporan) - new Date(a.tanggal_laporan)).slice(0, 5);
+            
+            if (sorted.length === 0) {
+                recentTable.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-400">Belum ada laporan harian tersimpan.</td></tr>`;
+                return;
+            }
+
+            sorted.forEach(rpt => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50';
+                tr.innerHTML = `
+                    <td class="p-3 font-semibold">${formatDateID(rpt.tanggal_laporan)}</td>
+                    <td class="p-3"><span class="bg-blue-100 text-kemensos-navy text-[10px] font-bold px-2 py-0.5 rounded">RHK ${rpt.rhk_id}</span></td>
+                    <td class="p-3 font-medium text-slate-800 truncate max-w-[200px]">${escapeHtml(rpt.pilihan_laporan)}</td>
+                    <td class="p-3 text-slate-600">${escapeHtml(rpt.lokasi)}</td>
+                    <td class="p-3 text-center font-semibold text-blue-700">${rpt.photos ? rpt.photos.length : 0}</td>
+                    <td class="p-3 text-center">
+                        <button onclick="window.viewReportDetail('${rpt.id}')" class="text-kemensos-navy font-semibold hover:underline">Detail</button>
+                    </td>
+                `;
+                recentTable.appendChild(tr);
+            });
+        }
+
+        async function viewReportDetail(id) {
+            const report = await db.getReportById(id);
+            if (!report) return;
+
+            let profile = null;
+            if (report.profile_id) {
+                profile = await db.getProfileById(report.profile_id);
+            }
+            if (!profile) {
+                profile = await db.getActiveProfile() || {};
+            }
+
+            const rhkMaster = MASTER_RHK.find(r => r.id === report.rhk_id);
+
+            const modalBody = document.getElementById('detail-modal-body');
+            
+            let photosHtml = '';
+            if (report.photos && report.photos.length > 0) {
+                photosHtml = `
+                    <div class="mt-4 pt-4 border-t border-slate-200">
+                        <h4 class="font-bold text-slate-800 text-sm mb-3 flex items-center gap-2">
+                            <i class="fa-solid fa-camera text-kemensos-navy"></i> Dokumentasi Kegiatan (${report.photos.length} Foto)
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            ${report.photos.map((p, idx) => `
+                                <div class="bg-slate-50 border border-slate-200 p-3 rounded-xl space-y-2">
+                                    <div class="h-44 bg-slate-200 rounded-lg overflow-hidden border border-slate-300">
+                                        <img src="${p.file_url}" alt="Foto ${idx+1}" class="w-full h-full object-cover">
+                                    </div>
+                                    <p class="font-semibold text-slate-700">Foto ${idx+1}:</p>
+                                    <p class="text-slate-600 bg-white p-2 rounded border border-slate-200 text-xs italic">${escapeHtml(p.description)}</p>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            } else {
+                photosHtml = `<p class="text-slate-400 italic mt-3 text-xs">Tidak ada dokumentasi foto terlampir.</p>`;
+            }
+
+            modalBody.innerHTML = `
+                <div class="bg-blue-50 p-4 rounded-xl border border-blue-200 space-y-1">
+                    <p class="font-bold text-kemensos-navy text-sm">LAPORAN HARIAN PELAKSANAAN TUGAS PENDAMPING PKH</p>
+                    <p class="text-kemensos-navy font-mono">No. Laporan: ${report.nomor_laporan}</p>
+                    <p class="text-kemensos-navy">Tanggal Kegiatan: <strong class="font-semibold">${formatDateID(report.tanggal_laporan)}</strong></p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 bg-slate-50 p-3 rounded-lg border border-slate-200 text-slate-700">
+                    <div><strong>Pendamping:</strong> ${profile.nama || '-'}</div>
+                    <div><strong>NIP:</strong> ${profile.nip || '-'}</div>
+                    <div><strong>Kelurahan:</strong> ${profile.kelurahan || '-'}</div>
+                    <div><strong>Kecamatan:</strong> ${profile.kecamatan || '-'}</div>
+                    <div><strong>Kabupaten:</strong> ${profile.kabupaten || '-'}</div>
+                    <div><strong>Provinsi:</strong> ${profile.provinsi || '-'}</div>
+                </div>
+
+                <div class="space-y-3">
+                    <div>
+                        <span class="bg-blue-100 text-kemensos-navy font-bold text-[10px] px-2 py-0.5 rounded">RHK ${report.rhk_id}</span>
+                        <p class="font-semibold text-slate-800 text-xs mt-1">${rhkMaster ? rhkMaster.desc : ''}</p>
+                    </div>
+
+                    <div>
+                        <span class="text-slate-500 font-semibold block text-[11px]">PILIHAN LAPORAN HARIAN:</span>
+                        <p class="font-bold text-slate-800">${escapeHtml(report.pilihan_laporan)}</p>
+                    </div>
+
+                    <div>
+                        <span class="text-slate-500 font-semibold block text-[11px]">B.2. URAIAN / REALISASI KEGIATAN:</span>
+                        <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 text-slate-800 leading-relaxed whitespace-pre-line">${escapeHtml(report.uraian)}</div>
+                    </div>
+
+                    <div>
+                        <span class="text-slate-500 font-semibold block text-[11px]">C. HASIL YANG DICAPAI:</span>
+                        <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 text-slate-800 leading-relaxed whitespace-pre-line">${escapeHtml(report.hasil_dicapai || '-')}</div>
+                    </div>
+
+                    <div>
+                        <span class="text-slate-500 font-semibold block text-[11px]">D. SIMPULAN DAN SARAN:</span>
+                        <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 text-slate-800 leading-relaxed whitespace-pre-line">${escapeHtml(report.simpulan_saran || '-')}</div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <span class="text-slate-500 font-semibold block text-[11px]">LOKASI KEGIATAN:</span>
+                            <p class="font-medium text-slate-800">${escapeHtml(report.lokasi)}</p>
+                        </div>
+                        <div>
+                            <span class="text-slate-500 font-semibold block text-[11px]">KETERANGAN:</span>
+                            <p class="font-medium text-slate-800">${escapeHtml(report.keterangan || '-')}</p>
+                        </div>
+                    </div>
+                </div>
+
+                ${photosHtml}
+            `;
+
+            document.getElementById('detail-pdf-btn').onclick = () => generateSinglePDF(report.id);
+            document.getElementById('modal-detail').classList.remove('hidden');
+        }
+        window.viewReportDetail = viewReportDetail;
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+        window.closeModal = closeModal;
+
+        // Monthly Rekap Engine
+        async function generateMonthlyRekapView() {
+            const mVal = document.getElementById('rekap-month-select').value;
+            const yVal = document.getElementById('rekap-year-input').value;
+
+            const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+            document.getElementById('rekap-title-label').textContent = `${monthNames[parseInt(mVal)-1]} ${yVal}`;
+
+            const allReports = await db.getAllReports();
+            const monthlyFiltered = allReports.filter(r => {
+                const parts = r.tanggal_laporan.split('-');
+                return parts[0] === yVal && parts[1] === mVal;
+            });
+
+            monthlyFiltered.sort((a,b) => new Date(a.tanggal_laporan) - new Date(b.tanggal_laporan));
+
+            const rhkCounts = {};
+            MASTER_RHK.forEach(r => rhkCounts[r.id] = 0);
+            monthlyFiltered.forEach(r => {
+                if (rhkCounts[r.rhk_id] !== undefined) rhkCounts[r.rhk_id]++;
+            });
+
+            const rhkListContainer = document.getElementById('rekap-rhk-list');
+            rhkListContainer.innerHTML = '';
+
+            MASTER_RHK.forEach(r => {
+                const card = document.createElement('div');
+                card.className = 'bg-slate-50 border border-slate-200 rounded-xl p-3 flex justify-between items-center';
+                card.innerHTML = `
+                    <div>
+                        <span class="bg-blue-100 text-kemensos-navy text-[10px] font-bold px-2 py-0.5 rounded">RHK ${r.id}</span>
+                        <p class="text-xs font-medium text-slate-700 mt-1 line-clamp-1">${r.desc}</p>
+                    </div>
+                    <span class="text-base font-bold bg-white px-3 py-1 rounded-lg border border-slate-200 text-kemensos-navy">${rhkCounts[r.id]}</span>
+                `;
+                rhkListContainer.appendChild(card);
+            });
+
+            const tbody = document.getElementById('rekap-table-body');
+            tbody.innerHTML = '';
+
+            if (monthlyFiltered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400">Tidak ada kegiatan tercatat pada bulan ${monthNames[parseInt(mVal)-1]} ${yVal}.</td></tr>`;
+                return;
+            }
+
+            monthlyFiltered.forEach((rpt, idx) => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50';
+                tr.innerHTML = `
+                    <td class="p-3 text-center text-slate-500">${idx+1}</td>
+                    <td class="p-3 font-semibold">${formatDateID(rpt.tanggal_laporan)}</td>
+                    <td class="p-3 text-center"><span class="bg-blue-100 text-kemensos-navy text-[10px] font-bold px-2 py-0.5 rounded">RHK ${rpt.rhk_id}</span></td>
+                    <td class="p-3">
+                        <div class="font-semibold text-slate-800">${escapeHtml(rpt.pilihan_laporan)}</div>
+                        <div class="text-slate-500 line-clamp-2 text-[11px]">${escapeHtml(rpt.uraian)}</div>
+                    </td>
+                    <td class="p-3">${escapeHtml(rpt.lokasi)}</td>
+                    <td class="p-3 text-center font-bold text-blue-700">${rpt.photos ? rpt.photos.length : 0}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+        window.generateMonthlyRekapView = generateMonthlyRekapView;
+
+        async function downloadRekapPDF() {
+            const mVal = document.getElementById('rekap-month-select').value;
+            const yVal = document.getElementById('rekap-year-input').value;
+            const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+
+            const allReports = await db.getAllReports();
+            const monthlyFiltered = allReports.filter(r => {
+                const parts = r.tanggal_laporan.split('-');
+                return parts[0] === yVal && parts[1] === mVal;
+            });
+
+            if (monthlyFiltered.length === 0) {
+                showToast(`Tidak ada data laporan untuk bulan ${monthNames[parseInt(mVal)-1]} ${yVal}`, 'error');
+                return;
+            }
+
+            monthlyFiltered.sort((a,b) => new Date(a.tanggal_laporan) - new Date(b.tanggal_laporan));
+            const profile = await db.getActiveProfile() || {};
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const margin = 12;
+
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(12);
+            doc.text(`REKAPITULASI LAPORAN HARIAN PENDAMPING PKH`, pageWidth / 2, 15, { align: "center" });
+            doc.setFontSize(10);
+            doc.text(`PERIODE: BULAN ${monthNames[parseInt(mVal)-1].toUpperCase()} TAHUN ${yVal}`, pageWidth / 2, 21, { align: "center" });
+
+            doc.setLineWidth(0.5);
+            doc.line(margin, 25, pageWidth - margin, 25);
+
+            doc.setFontSize(8);
+            doc.setFont("helvetica", "normal");
+            doc.text(`Nama Pendamping : ${profile.nama || '-'}`, margin, 30);
+            doc.text(`Kecamatan / Kab : ${profile.kecamatan || '-'} / ${profile.kabupaten || '-'}`, 150, 30);
+
+            const tableRows = monthlyFiltered.map((r, idx) => [
+                idx + 1,
+                formatDateID(r.tanggal_laporan),
+                `RHK ${r.rhk_id}`,
+                r.pilihan_laporan,
+                r.uraian,
+                r.lokasi,
+                r.photos ? `${r.photos.length} Foto` : '0'
+            ]);
+
+            doc.autoTable({
+                startY: 34,
+                head: [['NO', 'TANGGAL', 'RHK', 'PILIHAN LAPORAN HARIAN', 'URAIAN KEGIATAN', 'LOKASI', 'DOKUMENTASI']],
+                body: tableRows,
+                theme: 'grid',
+                headStyles: { fillColor: [0, 51, 102], textColor: 255, fontSize: 8, fontStyle: 'bold', halign: 'center' },
+                bodyStyles: { fontSize: 8 },
+                columnStyles: {
+                    0: { cellWidth: 10, halign: 'center' },
+                    1: { cellWidth: 25, halign: 'center' },
+                    2: { cellWidth: 18, halign: 'center' },
+                    3: { cellWidth: 65 },
+                    4: { cellWidth: 110 },
+                    5: { cellWidth: 30 },
+                    6: { cellWidth: 20, halign: 'center' }
+                },
+                margin: { left: margin, right: margin }
+            });
+
+            const pageCount = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= pageCount; i++) {
+                doc.setPage(i);
+                doc.setFontSize(8);
+                doc.text(`Halaman ${i} dari ${pageCount}`, pageWidth - margin, 200, { align: 'right' });
+            }
+
+            doc.save(`Rekap_PKH_${mVal}_${yVal}.pdf`);
+            showToast('PDF Rekap Bulanan berhasil diunduh!');
+        }
+        window.downloadRekapPDF = downloadRekapPDF;
+
+        // Export & Backup Engine
+        async function exportToExcel() {
+            const allReports = await db.getAllReports();
+            if (allReports.length === 0) {
+                showToast('Tidak ada data untuk diekspor', 'error');
+                return;
+            }
+
+            const exportData = allReports.map((r, idx) => ({
+                "No": idx + 1,
+                "Nomor Laporan": r.nomor_laporan,
+                "Tanggal Kegiatan": formatDateID(r.tanggal_laporan),
+                "Nomor RHK": `RHK ${r.rhk_id}`,
+                "Pilihan Laporan Harian": r.pilihan_laporan,
+                "Uraian / Realisasi Kegiatan": r.uraian,
+                "Hasil yang Dicapai": r.hasil_dicapai || "",
+                "Simpulan dan Saran": r.simpulan_saran || "",
+                "Lokasi Kegiatan": r.lokasi,
+                "Keterangan": r.keterangan || "",
+                "Jumlah Foto": r.photos ? r.photos.length : 0,
+                "Waktu System Saved": r.created_at
+            }));
+
+            const worksheet = XLSX.utils.json_to_sheet(exportData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Laporan_Harian_PKH");
+
+            XLSX.writeFile(workbook, `Data_Laporan_PKH_${new Date().toISOString().split('T')[0]}.xlsx`);
+            showToast('Data berhasil diekspor ke Excel!');
+        }
+        window.exportToExcel = exportToExcel;
+
+        async function backupJSON() {
+            const reports = await db.getAllReports();
+            const profiles = await db.getAllProfiles();
+            const activeProf = await db.getActiveProfile();
+
+            const backupObj = {
+                version: "2.0",
+                export_date: new Date().toISOString(),
+                active_profile_id: activeProf ? activeProf.id : null,
+                profiles: profiles,
+                reports: reports
+            };
+
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupObj));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `Backup_PKH_${new Date().toISOString().split('T')[0]}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+
+            showToast('Backup JSON berhasil diunduh!');
+        }
+        window.backupJSON = backupJSON;
+
+        function restoreJSON(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    if (parsed.profiles && Array.isArray(parsed.profiles)) {
+                        for (const prof of parsed.profiles) {
+                            await db.saveProfile(prof);
+                        }
+                    } else if (parsed.identitas) {
+                        const legacyProf = { ...parsed.identitas, id: `PROF-LEGACY` };
+                        await db.saveProfile(legacyProf);
+                    }
+
+                    if (parsed.active_profile_id) {
+                        await db.setActiveProfileId(parsed.active_profile_id);
+                    }
+
+                    if (parsed.reports && Array.isArray(parsed.reports)) {
+                        await db.bulkSaveReports(parsed.reports);
+                    }
+
+                    showToast('Data berhasil dipulihkan dari backup!');
+                    await refreshHeaderUser();
+                    await loadProfilesManager();
+                    refreshDashboard();
+                    event.target.value = '';
+                } catch (err) {
+                    showToast('File backup JSON tidak valid', 'error');
+                }
+            };
+            reader.readAsText(file);
+        }
+        window.restoreJSON = restoreJSON;
+
+        // Sample Preloader Data
+        async function loadSampleDataIfEmpty() {
+            const existingProfiles = await db.getAllProfiles();
+            if (existingProfiles.length === 0) {
+                const sampleProf = {
+                    id: "PROF-SAMPLE-1",
+                    nama: "NURUL HIDAYATI, S.Pd.",
+                    nip: "199408122023012001",
+                    kelurahan: "Kelurahan Tanjung Baru",
+                    kecamatan: "Kedamaian",
+                    kabupaten: "Kota Bandar Lampung",
+                    provinsi: "Lampung",
+                    periode: "Bulanan",
+                    tahun: "2026",
+                    ttd_url: ""
+                };
+                await db.saveProfile(sampleProf);
+                await db.setActiveProfileId("PROF-SAMPLE-1");
+            }
+
+            const existingReports = await db.getAllReports();
+            if (existingReports.length > 0) return;
+
+            const today = new Date().toISOString().split('T')[0];
+
+            const sampleReports = [
+                {
+                    id: "RPT-SAMPLE-1",
+                    nomor_laporan: "LP-PKH-20260820-001",
+                    tanggal_laporan: today,
+                    rhk_id: 1,
+                    pilihan_laporan: "Melakukan edukasi dan sosialisasi pencairan secara tunai dan non tunai.",
+                    uraian: "Melaksanakan sosialisasi kepada KPM PKH terkait mekanisme pencairan bantuan sosial tahap III serta memberikan edukasi penggunaan bansos secara bijak.",
+                    hasil_dicapai: "KPM memahami tata cara pencairan tunai dan non-tunai melalui ATM Himbara serta bansos disalurkan secara tepat sasaran.",
+                    simpulan_saran: "Kesimpulan: Kegiatan sosialisasi berjalan tertib dan aman.\n\nSaran: Perlu pendampingan berkala bagi KPM lansia dalam penggunaan kartu ATM.",
+                    lokasi: "Kelurahan Tanjung Baru, Kec. Kedamaian",
+                    keterangan: "Dihadiri 25 KPM PKH",
+                    profile_id: "PROF-SAMPLE-1",
+                    photos: [
+                        {
+                            file_name: "dokumentasi_sosialisasi.jpg",
+                            file_url: createSVGPlaceholder("Sosialisasi Pencairan Bansos KPM PKH"),
+                            description: "Pelaksanaan sosialisasi pencairan bantuan sosial secara non-tunai kepada KPM PKH Kelurahan Tanjung Baru."
+                        }
+                    ],
+                    created_at: new Date().toISOString()
+                },
+                {
+                    id: "RPT-SAMPLE-2",
+                    nomor_laporan: "LP-PKH-20260819-001",
+                    tanggal_laporan: "2026-08-19",
+                    rhk_id: 2,
+                    pilihan_laporan: "Melaksanakan Pertemuan Peningkatan Kemampuan Keluarga (P2K2).",
+                    uraian: "Melaksanakan kegiatan Pertemuan Peningkatan Kemampuan Keluarga (P2K2) Modul Kesehatan dan Gizi Sesi 1 Pemenuhan Gizi Ibu Hamil.",
+                    hasil_dicapai: "KPM memahami pentingnya pemenuhan gizi 1000 Hari Pertama Kehidupan (HPK) untuk mencegah stunting pada anak.",
+                    simpulan_saran: "Kesimpulan: Seluruh KPM hadir aktif berdiskusi.\n\nSaran: Diharapkan KPM dapat menerapkan materi dalam kebiasaan makan sehari-hari.",
+                    lokasi: "RT 02 RW 04 Kelurahan Tanjung Baru",
+                    keterangan: "KPM aktif berdiskusi",
+                    profile_id: "PROF-SAMPLE-1",
+                    photos: [
+                        {
+                            file_name: "p2k2_kesehatan.jpg",
+                            file_url: createSVGPlaceholder("Pertemuan P2K2 Kesehatan & Gizi"),
+                            description: "Pendamping menyampaikan materi P2K2 modul kesehatan gizi bagi ibu hamil dan balita."
+                        }
+                    ],
+                    created_at: new Date().toISOString()
+                }
+            ];
+
+            await db.bulkSaveReports(sampleReports);
+        }
+
+        function createSVGPlaceholder(text) {
+            const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400" viewBox="0 0 600 400"><rect width="100%" height="100%" fill="#003366"/><circle cx="300" cy="180" r="60" fill="#d4af37" opacity="0.3"/><text x="50%" y="50%" font-family="Arial" font-size="20" font-weight="bold" fill="#ffffff" text-anchor="middle">${text}</text><text x="50%" y="60%" font-family="Arial" font-size="14" fill="#d4af37" text-anchor="middle">Dokumentasi Kegiatan PKH</text></svg>`;
+            return "data:image/svg+xml;base64," + btoa(encodeURIComponent(svg).replace(/%([0-9A-F]{2})/g, (match, p1) => String.fromCharCode('0x' + p1)));
+        }
+
+        function formatDateID(dateStr) {
+            if (!dateStr) return '-';
+            const parts = dateStr.split('-');
+            if (parts.length !== 3) return dateStr;
+            return `${parts[2]}/${parts[1]}/${parts[0]}`;
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>"']/g, function(m) {
+                return {
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#039;'
+                }[m];
+            });
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast-notification');
+            const icon = document.getElementById('toast-icon');
+            const msgEl = document.getElementById('toast-message');
+
+            msgEl.textContent = message;
+
+            if (type === 'error') {
+                icon.className = 'fa-solid fa-circle-xmark text-rose-400 text-base';
+            } else {
+                icon.className = 'fa-solid fa-circle-check text-emerald-400 text-base';
+            }
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
